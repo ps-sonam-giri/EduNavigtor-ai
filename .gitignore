@@ -1,4 +1,4 @@
-# Python
+# ── Python ────────────────────────────────────────────────────
 __pycache__/
 *.py[cod]
 *$py.class
@@ -23,7 +23,7 @@ wheels/
 .installed.cfg
 *.egg
 
-# Node
+# ── Node ──────────────────────────────────────────────────────
 node_modules/
 npm-debug.log*
 yarn-debug.log*
@@ -34,51 +34,63 @@ build/
 .next/
 out/
 
-# Environment
+# ── Environment & Secrets (NEVER commit these) ────────────────
 .env
 .env.local
 .env.*.local
 *.env
-
-# Secrets — never commit these
+backend/.env
+backend/.env.local
+frontend/.env
+frontend/.env.local
+.env.production
+.env.staging
 docker-compose.override.yml
 
-# IDE
+# ── IDE ───────────────────────────────────────────────────────
 .vscode/
 .idea/
 *.swp
 *.swo
 *~
 
-# OS
+# ── OS ───────────────────────────────────────────────────────
 .DS_Store
 Thumbs.db
 
-# Database
+# ── Database ─────────────────────────────────────────────────
 *.db
 *.sqlite
 *.sqlite3
 
-# Logs
+# ── Logs ─────────────────────────────────────────────────────
 logs/
 *.log
 
-# Testing
+# ── Testing ──────────────────────────────────────────────────
 .coverage
 htmlcov/
 .pytest_cache/
 .tox/
 
-# Docker
+# ── Docker ───────────────────────────────────────────────────
 *.tar
 
-# MCP
+# ── MCP ──────────────────────────────────────────────────────
 .mcp/
 
-# Reports
+# ── Generated files ───────────────────────────────────────────
 reports/generated/*.pdf
 reports/generated/*.docx
 
-# Uploads
+# ── Uploads ──────────────────────────────────────────────────
 uploads/*
 !uploads/.gitkeep
+
+# ── Certificates & Keys ──────────────────────────────────────
+*.pem
+*.key
+*.cert
+*.p12
+gmail_credentials.json
+token.json
