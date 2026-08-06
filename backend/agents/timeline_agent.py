@@ -54,7 +54,7 @@ async def timeline_agent(state: AgentState) -> AgentState:
         has_gre=profile.get("gre_score") is not None,
     )
 
-    response_text, tokens = await ainvoke_llm(prompt)
+    response_text, tokens = await ainvoke_llm(prompt, use_search=False)
     timeline_data = extract_json_from_response(response_text)
 
     if not timeline_data or not timeline_data.get("timeline"):

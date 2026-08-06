@@ -31,7 +31,7 @@ async def report_agent(state: AgentState) -> AgentState:
             [t.get("phase") for t in timeline[:5]], indent=2
         ),
     )
-    summary_text, tokens1 = await ainvoke_llm(summary_prompt)
+    summary_text, tokens1 = await ainvoke_llm(summary_prompt, use_search=True)
 
     # ── Final recommendation ──────────────────────────────────────────────────
     rec_prompt = FINAL_RECOMMENDATION_PROMPT.format(
@@ -41,7 +41,7 @@ async def report_agent(state: AgentState) -> AgentState:
         finance=json.dumps(finance, indent=2),
         career_goal=profile.get("career_goal", "Not specified"),
     )
-    rec_text, tokens2 = await ainvoke_llm(rec_prompt)
+    rec_text, tokens2 = await ainvoke_llm(rec_prompt, use_search=False)
 
     # ── Assemble report ───────────────────────────────────────────────────────
     final_report: Dict[str, Any] = {

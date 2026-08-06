@@ -68,29 +68,33 @@ async def orchestrator_node(state: AgentState) -> AgentState:
     reasoning: str = routing_data.get("reasoning", "Running standard workflow.")
     direct_answer: bool = routing_data.get("direct_answer", False)
 
-    # If direct_answer mode, generate response from conversation context
+    # If direct_answer mode, generate response from conversation context + web search
     if direct_answer and not agents_to_run and recent_history:
         direct_prompt = f"""You are EduPilot AI, a study abroad advisor for Indian students.
+Use Google Search to find current, accurate information when needed.
 
-Answer this question directly using the conversation history and your knowledge.
-Be specific. Use bullet points. Reference actual numbers where relevant.
+Answer this question DIRECTLY and SPECIFICALLY based on the conversation history.
+Use bullet points. Show tables where helpful. Reference actual numbers.
 
 Conversation history:
 {recent_history}
 
 Student question: {query}
 
-Important:
-- If asking about universities from the whole world → recommend 5-6 real global universities with specific details
-- If asking about cost/budget → give specific USD and INR numbers
-- If asking about scholarships → list specific scholarships with amounts
-- If asking about timeline → give month-by-month steps
-- Always be specific, never say "see above" or "as mentioned"
-- Use bullet points and bold headers
+Rules:
+- If asking about universities → show table with name, country, tuition, chances
+- If asking about cost/budget → show exact USD and INR breakdown
+- If asking about scholarships → list with name, amount, basis, deadline
+- If asking about timeline → give month-by-month milestones
+- If asking about visa → give specific steps and documents list
+- Always use the student's actual profile numbers from the conversation
+- Never say "as mentioned earlier" — always give the actual answer
+- Use web search for current 2025-2026 data on fees, deadlines, rankings
 
-Answer now:"""
+Answer now with structured bullet points and tables:"""
 
-        direct_response, tokens2 = await ainvoke_llm(direct_prompt)
+        # Use web search for direct answers too
+        direct_response, tokens2 = await ainvoke_llm(direct_prompt, use_search=True)
         tokens += tokens2
 
         return {

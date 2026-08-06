@@ -75,7 +75,7 @@ function MessageContent({ content }: { content: string }) {
     } else {
       const formatted = line
         .replace(/\*\*(.+?)\*\*/g, '<strong>$1</strong>')
-        .replace(/\[(.+?)\]\((https?:\/\/.+?)\)/g, '<a href="$2" target="_blank" class="text-brand-500 underline">$1</a>')
+        .replace(/\[(.+?)\]\((https?:\/\/.+?)\)/g, '<a href="$2" target="_blank" rel="noreferrer" class="text-brand-500 underline hover:text-brand-600">$1</a>')
 
       if (line.startsWith('• ') || line.startsWith('- ') || line.startsWith('  - ')) {
         const indent = line.startsWith('  - ')

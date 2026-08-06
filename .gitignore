@@ -94,3 +94,10 @@ uploads/*
 *.p12
 gmail_credentials.json
 token.json
+
+# ── Documents ──────────────────────────────────────────────────
+*.doc
+*.docx
+*.pdf
+~$*.docx
+venv312/

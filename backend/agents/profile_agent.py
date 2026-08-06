@@ -24,7 +24,7 @@ async def profile_agent(state: AgentState) -> AgentState:
         existing_profile=json.dumps(profile, indent=2),
         user_query=query,
     )
-    extraction_text, tokens1 = await ainvoke_llm(extraction_prompt)
+    extraction_text, tokens1 = await ainvoke_llm(extraction_prompt, use_search=False)
     extracted = extract_json_from_response(extraction_text)
 
     # Merge extracted fields into profile (only update fields not already set)
@@ -56,3 +56,4 @@ async def profile_agent(state: AgentState) -> AgentState:
         "agents_executed": executed,
         "total_tokens_used": state.get("total_tokens_used", 0) + tokens1 + tokens2,
     }
+

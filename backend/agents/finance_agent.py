@@ -40,7 +40,7 @@ async def finance_agent(state: AgentState) -> AgentState:
         budget_usd=profile.get("total_budget_usd", "Not specified"),
     )
 
-    response_text, tokens = await ainvoke_llm(prompt)
+    response_text, tokens = await ainvoke_llm(prompt, use_search=True)
     finance_data = extract_json_from_response(response_text)
 
     # Ensure we always have a valid structure
@@ -149,3 +149,4 @@ def _calculate_finance_fallback(
         "student_budget_usd": student_budget,
         "currency_note": "All amounts in USD. Exchange rate: 1 USD ≈ 83 INR (verify current rate).",
     }
+
