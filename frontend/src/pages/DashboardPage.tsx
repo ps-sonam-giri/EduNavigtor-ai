@@ -30,7 +30,18 @@ export default function DashboardPage() {
     retry: false,
   })
 
-  const profileComplete = profile?.cgpa && profile?.course_interest && profile?.total_budget_usd
+  const profileComplete = Boolean(
+    profile && (
+      profile.cgpa ||
+      profile.degree ||
+      profile.specialization ||
+      profile.course_interest ||
+      profile.target_intake ||
+      profile.ielts_score ||
+      profile.total_budget_usd ||
+      (profile.preferred_countries && profile.preferred_countries.length > 0)
+    )
+  )
 
   return (
     <div className="space-y-8">

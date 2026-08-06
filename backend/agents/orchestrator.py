@@ -102,12 +102,34 @@ async def agent_decide_node(state: AgentState) -> AgentState:
     executed.append(f"agent_turn_{turn_count+1}")
 
     if action == "finish" or not action:
+        raw_msg = final_answer or response_text
+
+        # Compute RAG Evaluation Metrics (Answer Relevancy & Faithfulness)
+        from app.core.rag_evaluator import evaluate_answer_relevancy_and_faithfulness
+        eval_metrics = evaluate_answer_relevancy_and_faithfulness(
+            user_query=state.get("user_query", ""),
+            ai_response=raw_msg,
+            search_context=[str(o) for o in state.get("observations", [])]
+        )
+
+        rel_pct = int(eval_metrics["answer_relevancy"] * 100)
+        faith_pct = int(eval_metrics["faithfulness"] * 100)
+
+        eval_footer = (
+            f"\n\n---\n"
+            f"> 🛡️ **AI Copilot Evaluation Metrics**:\n"
+            f"> - **🎯 Answer Relevancy**: **{rel_pct}%** ({eval_metrics['evaluation']['relevancy_rating']})\n"
+            f"> - **🟢 Faithfulness (Grounding)**: **{faith_pct}%** ({eval_metrics['evaluation']['faithfulness_rating']})"
+        )
+
+        final_msg_with_eval = raw_msg + eval_footer
+
         return {
             **state,
             "turn_count": turn_count + 1,
             "current_thought": thought,
             "pending_action": None,
-            "message": final_answer or response_text,
+            "message": final_msg_with_eval,
             "agents_executed": executed,
             "total_tokens_used": state.get("total_tokens_used", 0) + tokens,
         }
@@ -257,12 +279,37 @@ async def run_orchestrator(
                 if val is not None:
                     profile_data[col] = val
 
-    # Check if profile is empty or unconfigured
+    # Direct DB fallback check if profile_data is empty
+    if not profile_data and db and user_id:
+        try:
+            import uuid
+            from sqlalchemy import select
+            from app.models.student_profile import StudentProfile
+            p_res = await db.execute(select(StudentProfile).where(StudentProfile.user_id == uuid.UUID(str(user_id))))
+            db_prof = p_res.scalar_one_or_none()
+            if db_prof:
+                for col in [
+                    "cgpa", "cgpa_scale", "backlogs", "degree", "specialization",
+                    "ielts_score", "toefl_score", "gre_score", "gmat_score",
+                    "preferred_countries", "course_interest", "career_goal",
+                    "target_intake", "total_budget_usd", "financial_background",
+                    "work_experience_years",
+                ]:
+                    val = getattr(db_prof, col, None)
+                    if val is not None:
+                        profile_data[col] = val
+        except Exception:
+            pass
+
+    # Check if profile has ANY user-configured fields
     has_info = any([
         profile_data.get("cgpa") is not None,
         profile_data.get("degree") is not None and str(profile_data.get("degree")).strip() != "",
         profile_data.get("specialization") is not None and str(profile_data.get("specialization")).strip() != "",
         profile_data.get("course_interest") is not None and str(profile_data.get("course_interest")).strip() != "",
+        profile_data.get("target_intake") is not None and str(profile_data.get("target_intake")).strip() != "",
+        profile_data.get("ielts_score") is not None,
+        profile_data.get("total_budget_usd") is not None,
         profile_data.get("preferred_countries") is not None and len(profile_data.get("preferred_countries")) > 0,
     ])
 

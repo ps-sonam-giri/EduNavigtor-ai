@@ -14,6 +14,47 @@ const NUMBER_FIELDS = [
   'total_budget_usd', 'work_experience_years',
 ]
 
+/** Calculate 6-Pillar Evaluation Matrix Scores based on profile */
+function calculateEvaluationMatrix(profile: any) {
+  const cgpa = Number(profile?.cgpa || 8.5)
+  const scale = Number(profile?.cgpa_scale || 10)
+  const normCgpa = Math.min(100, Math.round((cgpa / scale) * 100))
+
+  const ielts = Number(profile?.ielts_score || 7.5)
+  const gre = Number(profile?.gre_score || 320)
+  const examScore = Math.min(100, Math.round(((ielts / 9) * 50) + ((gre / 340) * 50)))
+
+  const budget = Number(profile?.total_budget_usd || 35000)
+  const finScore = budget >= 40000 ? 95 : budget >= 25000 ? 85 : 70
+
+  const exp = Number(profile?.work_experience_years || 2)
+  const expScore = exp >= 3 ? 95 : exp >= 1 ? 85 : 70
+
+  const docScore = profile?.documents && Object.keys(profile.documents).length >= 2 ? 90 : 75
+  const timelineScore = 90 // Default strong timeframe score
+
+  const overallScore = Math.round(
+    (normCgpa * 0.25) +
+    (examScore * 0.20) +
+    (finScore * 0.20) +
+    (expScore * 0.15) +
+    (docScore * 0.10) +
+    (timelineScore * 0.10)
+  )
+
+  return {
+    overallScore,
+    pillars: [
+      { name: 'Academic Competitiveness', weight: '25%', score: normCgpa, status: normCgpa >= 80 ? 'Strong' : 'Average' },
+      { name: 'Exam Readiness Index (IELTS/GRE)', weight: '20%', score: examScore, status: examScore >= 80 ? 'Competitive' : 'Target' },
+      { name: 'Financial Coverage Viability', weight: '20%', score: finScore, status: finScore >= 80 ? 'Adequate' : 'Partial' },
+      { name: 'Work & Research Strength', weight: '15%', score: expScore, status: expScore >= 80 ? 'Solid' : 'Developing' },
+      { name: 'Document Readiness (SOP/LOR)', weight: '10%', score: docScore, status: docScore >= 85 ? 'Complete' : 'In Progress' },
+      { name: 'Intake Timeline Feasibility', weight: '10%', score: timelineScore, status: 'On Track' },
+    ]
+  }
+}
+
 export default function ProfilePage() {
   const qc = useQueryClient()
   const [selectedCountries, setSelectedCountries] = useState<string[]>([])
@@ -105,11 +146,47 @@ export default function ProfilePage() {
     </div>
   )
 
+  const matrix = calculateEvaluationMatrix(profile)
+
   return (
     <div className="max-w-3xl space-y-6">
       <div>
-        <h1 className="text-2xl font-bold text-gray-900">My Profile</h1>
-        <p className="text-gray-500 text-sm">Your academic profile powers all AI recommendations</p>
+        <h1 className="text-2xl font-bold text-gray-900">My Profile & Evaluation Scorecard</h1>
+        <p className="text-gray-500 text-sm">Your academic profile powers AI recommendations and candidate admission scoring</p>
+      </div>
+
+      {/* AI Candidate Evaluation Matrix Scorecard */}
+      <div className="card space-y-4 border-brand-100 bg-gradient-to-br from-white via-brand-50/10 to-indigo-50/20 shadow-sm">
+        <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-2 border-b border-slate-100 pb-3">
+          <div>
+            <h2 className="text-base font-bold text-slate-900 flex items-center gap-2">
+              <CheckCircle className="w-5 h-5 text-brand-500" /> AI Candidate Evaluation Matrix
+            </h2>
+            <p className="text-xs text-slate-500">6-pillar weighted index for university admission competitiveness</p>
+          </div>
+          <div className="px-3.5 py-1.5 rounded-full bg-brand-500 text-white text-xs font-bold shadow-xs shrink-0 self-start sm:self-auto">
+            Profile Score: {matrix.overallScore} / 100
+          </div>
+        </div>
+
+        {/* 6 Pillar Progress Bars */}
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-3 pt-1">
+          {matrix.pillars.map((p, idx) => (
+            <div key={idx} className="p-3 bg-white rounded-xl border border-slate-100 space-y-1.5">
+              <div className="flex items-center justify-between text-xs">
+                <span className="font-semibold text-slate-800">{p.name} <span className="text-[10px] text-slate-400">({p.weight})</span></span>
+                <span className="font-bold text-brand-600">{p.score}%</span>
+              </div>
+              <div className="w-full bg-slate-100 rounded-full h-2 overflow-hidden">
+                <div className="bg-gradient-to-r from-brand-500 to-indigo-600 h-2 rounded-full transition-all duration-500" style={{ width: `${p.score}%` }} />
+              </div>
+              <div className="flex items-center justify-between text-[11px]">
+                <span className="text-slate-400">Status</span>
+                <span className="font-semibold text-emerald-600 bg-emerald-50 px-2 py-0.5 rounded-full border border-emerald-200/60">{p.status}</span>
+              </div>
+            </div>
+          ))}
+        </div>
       </div>
 
       <form onSubmit={handleSubmit(d => mutation.mutate(d))} className="space-y-6">

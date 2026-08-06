@@ -88,10 +88,16 @@ function MessageContent({ content }: { content: string }) {
         .replace(/\*\*(.+?)\*\*/g, '<strong>$1</strong>')
         .replace(/\[(.+?)\]\((https?:\/\/.+?)\)/g, '<a href="$2" target="_blank" rel="noreferrer" class="text-brand-500 font-semibold underline hover:text-brand-600">$1 ↗</a>')
 
-      // Blockquotes / Callout boxes
+      // Blockquotes / AI Evaluation Callout boxes
       if (line.startsWith('> ')) {
+        const isEval = line.includes('🛡️') || line.includes('Answer Relevancy') || line.includes('Faithfulness')
         elements.push(
-          <div key={`quote-${i}`} className="my-2 p-3 bg-amber-50/80 border-l-4 border-amber-500 rounded-r-xl text-xs text-amber-900 font-medium">
+          <div key={`quote-${i}`} className={clsx(
+            'my-2.5 p-3.5 rounded-xl text-xs font-medium border shadow-2xs transition-all',
+            isEval
+              ? 'bg-gradient-to-r from-brand-50/60 via-indigo-50/40 to-emerald-50/40 border-brand-200/80 text-slate-800'
+              : 'bg-amber-50/80 border-l-4 border-amber-500 border-amber-200 text-amber-900'
+          )}>
             <span dangerouslySetInnerHTML={{ __html: formatted.replace(/^>\s*/, '') }} />
           </div>
         )
