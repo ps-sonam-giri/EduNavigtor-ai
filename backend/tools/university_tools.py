@@ -28,49 +28,26 @@ async def search_universities_tool(
     limit: int = 5,
 ) -> List[Dict[str, Any]]:
     """
-    Search universities matching country, budget, and academic criteria.
-    Returns verified database records with tuition, ranking, and requirements.
+    Search universities matching country, budget, and academic criteria via Tavily Live Web Search.
     """
-    engine = create_async_engine(settings.database_url, echo=False)
-    async_session = async_sessionmaker(engine, expire_on_commit=False)
+    from tools.tavily_tools import search_tavily_web
 
-    try:
-        async with async_session() as session:
-            stmt = select(University).join(Country, University.country_id == Country.id)
+    query = f"top universities for {course_interest or 'Computer Science'} in {country or 'Germany USA UK Canada'} QS rank tuition fees 2025 2026"
+    if max_tuition_usd:
+        query += f" tuition under {max_tuition_usd} USD"
 
-            filters = []
-            if country:
-                filters.append(Country.name.ilike(f"%{country}%"))
-            if max_tuition_usd:
-                filters.append(University.avg_tuition_usd_per_year <= max_tuition_usd)
-            if min_cgpa:
-                filters.append(or_(University.min_cgpa == None, University.min_cgpa <= min_cgpa))
+    res = await search_tavily_web(query=query, max_results=min(limit, 10))
 
-            if filters:
-                stmt = stmt.where(*filters)
+    if res.get("status") == "success":
+        results = []
+        for r in res.get("results", []):
+            results.append({
+                "name": r.get("title", "University Result"),
+                "country": country or "International",
+                "content_snippet": r.get("content", "")[:300],
+                "url": r.get("url"),
+                "source": "Tavily Live Web Engine",
+            })
+        return results
 
-            stmt = stmt.order_by(University.qs_world_rank.asc().nullslast()).limit(min(limit, 10))
-
-            result = await session.execute(stmt)
-            rows = result.scalars().all()
-            await engine.dispose()
-
-            return [
-                {
-                    "name": u.name,
-                    "country": u.country.name if u.country else "N/A",
-                    "city": u.city or "N/A",
-                    "qs_world_rank": u.qs_world_rank,
-                    "avg_tuition_usd_per_year": float(u.avg_tuition_usd_per_year or 0),
-                    "avg_living_cost_usd_per_month": float(u.avg_living_cost_usd_per_month or 0),
-                    "min_cgpa": float(u.min_cgpa or 0),
-                    "min_ielts": float(u.min_ielts or 0),
-                    "backlog_policy": u.backlog_policy or "Standard evaluation",
-                    "programs": u.programs or [],
-                    "website": u.website or "",
-                    "source": "EduPilot Verified Database",
-                }
-                for u in rows
-            ]
-    except Exception as e:
-        return [{"error": f"University search failed: {str(e)}"}]
+    return [{"error": "Tavily live search failed"}]

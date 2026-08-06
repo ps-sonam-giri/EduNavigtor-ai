@@ -7,7 +7,7 @@ Perceive → Decide Action → Execute Tool → Observe Result → Reflect/Verif
 import json
 import time
 import uuid
-from typing import Any, Dict, List, Optional
+from typing import Any, Dict, List, Optional, Tuple
 
 from langgraph.graph import END, StateGraph
 
@@ -17,8 +17,8 @@ from agents.verifier import verifier_node
 from tools.registry import execute_tool, get_tool_schemas
 
 
-REACT_DECISION_PROMPT = """You are EduPilot AI, an autonomous study abroad copilot for Indian students.
-Your task is to help the student by deciding the BEST tool action to execute next, OR providing the final grounded answer.
+REACT_DECISION_PROMPT = """You are EduPilot AI, a state-of-the-art autonomous study abroad copilot.
+Your task is to help the student by deciding the BEST tool action to execute next, OR providing a beautifully formatted, executive-level final answer.
 
 Student Profile:
 {profile_summary}
@@ -37,6 +37,13 @@ RULES FOR DECISION-MAKING:
 1. If you need data (universities, scholarships, financial calculations, document parsing), choose a TOOL ACTION.
 2. If you have gathered all necessary observations to answer the query completely, choose "finish".
 3. Always base your final answer strictly on returned tool observations. Do not invent unverified facts.
+4. ANSWER FORMATTING REQUIREMENTS (CRITICAL FOR USER READABILITY):
+   - Start with a clear Executive Summary block (e.g., 🎯 **Executive Brief**).
+   - Use Markdown Tables with clean column headers for multi-item comparisons (universities, fees, scholarships).
+   - Use section headers (### 🎓 Top Universities, ### 🏆 Scholarship Matches, ### 💰 Financial Breakdown, ### 📌 Action Plan).
+   - Include color/emoji indicators (🟢 Safe, 🟡 Target, 🔴 Reach).
+   - Include direct clickable links (`[Website](URL)` or `[Apply Link](URL)`).
+   - Conclude with a 💡 **Next Steps / Action Items** list.
 
 Respond ONLY with a valid JSON object matching ONE of these formats:
 
@@ -51,7 +58,7 @@ Format B (Finish & Output Final Answer):
 {{
   "thought": "Reasoning about why we have sufficient data...",
   "action": "finish",
-  "final_answer": "Complete, structured answer with tables and markdown bullet points."
+  "final_answer": "Beautifully formatted executive answer with tables, structured bullet points, and actionable next steps."
 }}
 """
 
@@ -200,6 +207,29 @@ def get_workflow():
     return _workflow
 
 
+def _check_past_intake(target_intake: Optional[str], query: str) -> Tuple[bool, str]:
+    import re
+    q = (query or "").lower()
+    t = (target_intake or "").lower()
+    combined = f"{t} {q}"
+
+    # Match past years like 2025, 2024, 2023...
+    years = re.findall(r'\b(20\d\d)\b', combined)
+    for y in years:
+        if int(y) < 2026:
+            return True, f"{target_intake if target_intake and y in target_intake else y}"
+
+    # Match terms before August 2026
+    if "2026" in combined:
+        if any(term in combined for term in [
+            "spring 2026", "jan 2026", "january 2026", "winter 2026",
+            "summer 2026", "may 2026", "june 2026", "july 2026"
+        ]):
+            return True, f"{target_intake or 'Spring / Summer 2026'}"
+
+    return False, ""
+
+
 async def run_orchestrator(
     query: str,
     session_id: str,
@@ -213,16 +243,64 @@ async def run_orchestrator(
     """
     profile_data: Dict = {}
     if student_profile:
-        for col in [
-            "cgpa", "cgpa_scale", "backlogs", "degree", "specialization",
-            "ielts_score", "toefl_score", "gre_score", "gmat_score",
-            "preferred_countries", "course_interest", "career_goal",
-            "target_intake", "total_budget_usd", "financial_background",
-            "work_experience_years",
-        ]:
-            val = getattr(student_profile, col, None)
-            if val is not None:
-                profile_data[col] = val
+        if isinstance(student_profile, dict):
+            profile_data = dict(student_profile)
+        else:
+            for col in [
+                "cgpa", "cgpa_scale", "backlogs", "degree", "specialization",
+                "ielts_score", "toefl_score", "gre_score", "gmat_score",
+                "preferred_countries", "course_interest", "career_goal",
+                "target_intake", "total_budget_usd", "financial_background",
+                "work_experience_years",
+            ]:
+                val = getattr(student_profile, col, None)
+                if val is not None:
+                    profile_data[col] = val
+
+    # Check if profile is empty or unconfigured
+    has_info = any([
+        profile_data.get("cgpa") is not None,
+        profile_data.get("degree") is not None and str(profile_data.get("degree")).strip() != "",
+        profile_data.get("specialization") is not None and str(profile_data.get("specialization")).strip() != "",
+        profile_data.get("course_interest") is not None and str(profile_data.get("course_interest")).strip() != "",
+        profile_data.get("preferred_countries") is not None and len(profile_data.get("preferred_countries")) > 0,
+    ])
+
+    if not has_info:
+        notice_message = (
+            "⚠️ **Profile Setup Required**\n\n"
+            "You haven't set up your student profile yet!\n\n"
+            "Please first set up your academic profile (CGPA, degree, target countries, and budget) so AI Copilot can personalize university recommendations, tuition estimates, and scholarship matches.\n\n"
+            "👉 Please go to [My Profile](/profile) to set up your profile now."
+        )
+        return {
+            "session_id": session_id,
+            "output": {"message": notice_message},
+            "reasoning": "Student profile missing or empty.",
+            "agents_executed": ["profile_checker"],
+            "tokens_used": 0,
+            "verification": {"status": "profile_required"},
+        }
+
+    # Check if target intake is in the past (2025 or before August 2026)
+    is_past, detected_term = _check_past_intake(profile_data.get("target_intake"), query)
+    if is_past:
+        past_message = (
+            "⏰ **You are late to apply!**\n\n"
+            f"The target intake term specified (**{detected_term}**) has already passed or application deadlines closed prior to August 2026.\n\n"
+            "Universities for 2025 and early-2026 intakes have already completed admissions, visa processing, and course orientation.\n\n"
+            "💡 **Recommended Action:**\n"
+            "• Please target **Fall 2026 (September 2026)** or **Spring 2027 (January 2027)** for open application windows.\n"
+            "• Update your intake choice in **[My Profile](/profile)** or **[Timeline](/timeline)** to Fall 2026 / Spring 2027 to discover active university admissions."
+        )
+        return {
+            "session_id": session_id,
+            "output": {"message": past_message},
+            "reasoning": "Target intake date is in the past (before August 2026).",
+            "agents_executed": ["intake_checker"],
+            "tokens_used": 0,
+            "verification": {"status": "past_intake_late"},
+        }
 
     initial_state: AgentState = {
         "user_query": query,

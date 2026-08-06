@@ -18,10 +18,11 @@ interface MilestoneItem {
 }
 
 const INTAKES = [
-  { label: 'Fall 2026 (Sep 2026 Start)', value: 'Fall 2026', startYear: 2026, startMonth: 9 },
-  { label: 'Spring 2026 (Jan 2026 Start)', value: 'Spring 2026', startYear: 2026, startMonth: 1 },
-  { label: 'Fall 2025 (Sep 2025 Start)', value: 'Fall 2025', startYear: 2025, startMonth: 9 },
-  { label: 'Spring 2025 (Jan 2025 Start)', value: 'Spring 2025', startYear: 2025, startMonth: 1 },
+  { label: 'Fall 2026 (Sep 2026 Start) — Recommended', value: 'Fall 2026', startYear: 2026, startMonth: 9 },
+  { label: 'Spring 2027 (Jan 2027 Start) — Open', value: 'Spring 2027', startYear: 2027, startMonth: 1 },
+  { label: 'Spring 2026 (Jan 2026 Start) — Late / Closed', value: 'Spring 2026', startYear: 2026, startMonth: 1 },
+  { label: 'Fall 2025 (Sep 2025 Start) — Closed', value: 'Fall 2025', startYear: 2025, startMonth: 9 },
+  { label: 'Spring 2025 (Jan 2025 Start) — Closed', value: 'Spring 2025', startYear: 2025, startMonth: 1 },
 ]
 
 const COUNTRIES = ['Germany', 'USA', 'UK', 'Canada', 'Australia', 'Ireland']
@@ -307,6 +308,19 @@ export default function TimelinePage() {
           </div>
         </div>
       </div>
+
+      {/* Past Intake Warning Banner */}
+      {(targetIntake.includes('2025') || targetIntake.includes('Spring 2026') || targetIntake.includes('Summer 2026')) && (
+        <div className="p-4 bg-amber-50 border border-amber-200 rounded-xl flex items-start gap-3 text-amber-800 text-sm shadow-sm">
+          <AlertCircle className="w-5 h-5 text-amber-600 flex-shrink-0 mt-0.5" />
+          <div>
+            <p className="font-semibold text-amber-900">⏰ You are late to apply for {targetIntake}!</p>
+            <p className="text-xs text-amber-700 mt-0.5">
+              The intake term you selected ({targetIntake}) has already closed or passed prior to August 2026. Please select <strong>Fall 2026 (Sep 2026)</strong> or <strong>Spring 2027 (Jan 2027)</strong> for active open application windows.
+            </p>
+          </div>
+        </div>
+      )}
 
       {/* Progress Bar */}
       <div className="card">

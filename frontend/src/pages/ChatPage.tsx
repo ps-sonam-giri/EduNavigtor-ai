@@ -20,13 +20,13 @@ interface Message {
 }
 
 const SUGGESTIONS = [
-  { icon: Globe,      text: 'Which countries are best for me?' },
-  { icon: BookOpen,   text: 'Recommend universities for my profile' },
+  { icon: Globe, text: 'Which countries are best for me?' },
+  { icon: BookOpen, text: 'Recommend universities for my profile' },
   { icon: DollarSign, text: 'What scholarships am I eligible for?' },
-  { icon: Zap,        text: 'Give me my complete study abroad plan' },
+  { icon: Zap, text: 'Give me my complete study abroad plan' },
 ]
 
-/** Render AI response: markdown tables, bullet points, bold headers */
+/** Render AI response: markdown tables, blockquotes, bullet points, headers */
 function MessageContent({ content }: { content: string }) {
   const lines = content.split('\n')
   const elements: JSX.Element[] = []
@@ -45,23 +45,33 @@ function MessageContent({ content }: { content: string }) {
         i++
       }
       elements.push(
-        <div key={i} className="overflow-x-auto my-3 rounded-xl border border-gray-200">
+        <div key={`table-${i}`} className="overflow-x-auto my-3.5 rounded-xl border border-brand-200/80 shadow-sm bg-white">
           <table className="w-full text-xs">
             <thead>
-              <tr className="gradient-bg text-white">
+              <tr className="bg-gradient-to-r from-brand-600 via-indigo-600 to-purple-600 text-white">
                 {headers.map((h, j) => (
-                  <th key={j} className="px-3 py-2 text-left font-semibold whitespace-nowrap"
+                  <th key={j} className="px-4 py-2.5 text-left font-semibold tracking-wider text-[11px] uppercase whitespace-nowrap"
                     dangerouslySetInnerHTML={{ __html: h.replace(/\*\*(.+?)\*\*/g, '<strong>$1</strong>') }} />
                 ))}
               </tr>
             </thead>
-            <tbody>
+            <tbody className="divide-y divide-slate-100">
               {rows.map((row, ri) => (
-                <tr key={ri} className={ri % 2 === 0 ? 'bg-white' : 'bg-gray-50'}>
-                  {row.map((cell, ci) => (
-                    <td key={ci} className="px-3 py-2 border-t border-gray-100 whitespace-nowrap"
-                      dangerouslySetInnerHTML={{ __html: cell.replace(/\*\*(.+?)\*\*/g, '<strong>$1</strong>') }} />
-                  ))}
+                <tr key={ri} className={clsx('transition-colors', ri % 2 === 0 ? 'bg-white hover:bg-brand-50/30' : 'bg-slate-50/50 hover:bg-brand-50/40')}>
+                  {row.map((cell, ci) => {
+                    // Format status pills
+                    let cellFormatted = cell
+                      .replace(/🟢\s*(High|Safe|High Match)/g, '<span class="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[11px] font-semibold bg-emerald-50 text-emerald-700 border border-emerald-200">🟢 $1</span>')
+                      .replace(/🟡\s*(Medium|Target|Medium Match)/g, '<span class="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[11px] font-semibold bg-amber-50 text-amber-700 border border-amber-200">🟡 $1</span>')
+                      .replace(/🔴\s*(Low|Reach|Low Match)/g, '<span class="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[11px] font-semibold bg-rose-50 text-rose-700 border border-rose-200">🔴 $1</span>')
+                      .replace(/\*\*(.+?)\*\*/g, '<strong class="font-semibold text-slate-900">$1</strong>')
+                      .replace(/\[(.+?)\]\((https?:\/\/.+?)\)/g, '<a href="$2" target="_blank" rel="noreferrer" class="inline-flex items-center gap-1 px-2.5 py-1 rounded-lg bg-brand-50 text-brand-600 hover:bg-brand-600 hover:text-white transition-all text-[11px] font-semibold border border-brand-200/80 shadow-xs">$1 ↗</a>')
+
+                    return (
+                      <td key={ci} className="px-4 py-2.5 text-slate-700 whitespace-nowrap text-xs"
+                        dangerouslySetInnerHTML={{ __html: cellFormatted }} />
+                    )
+                  })}
                 </tr>
               ))}
             </tbody>
@@ -72,28 +82,63 @@ function MessageContent({ content }: { content: string }) {
     }
 
     if (!line.trim()) {
-      elements.push(<div key={i} className="h-2" />)
+      elements.push(<div key={`empty-${i}`} className="h-2" />)
     } else {
       const formatted = line
         .replace(/\*\*(.+?)\*\*/g, '<strong>$1</strong>')
-        .replace(/\[(.+?)\]\((https?:\/\/.+?)\)/g, '<a href="$2" target="_blank" rel="noreferrer" class="text-brand-500 underline hover:text-brand-600">$1</a>')
+        .replace(/\[(.+?)\]\((https?:\/\/.+?)\)/g, '<a href="$2" target="_blank" rel="noreferrer" class="text-brand-500 font-semibold underline hover:text-brand-600">$1 ↗</a>')
 
-      if (line.startsWith('• ') || line.startsWith('- ') || line.startsWith('  - ')) {
+      // Blockquotes / Callout boxes
+      if (line.startsWith('> ')) {
+        elements.push(
+          <div key={`quote-${i}`} className="my-2 p-3 bg-amber-50/80 border-l-4 border-amber-500 rounded-r-xl text-xs text-amber-900 font-medium">
+            <span dangerouslySetInnerHTML={{ __html: formatted.replace(/^>\s*/, '') }} />
+          </div>
+        )
+      }
+      // Section Headers (### or ##)
+      else if (line.startsWith('### ') || line.startsWith('## ')) {
+        elements.push(
+          <div key={`header-${i}`} className="mt-4 mb-2 flex items-center gap-2">
+            <span className="h-2 w-2 rounded-full gradient-bg flex-shrink-0" />
+            <h3 className="text-sm font-bold text-gray-900 uppercase tracking-wide"
+              dangerouslySetInnerHTML={{ __html: formatted.replace(/^#+\s*/, '') }} />
+          </div>
+        )
+      }
+      // Bullet points
+      else if (line.startsWith('• ') || line.startsWith('- ') || line.startsWith('  - ')) {
         const indent = line.startsWith('  - ')
         elements.push(
-          <div key={i} className={`flex items-start gap-2 text-sm leading-relaxed ${indent ? 'ml-4' : ''}`}>
-            <span className="text-brand-500 mt-0.5 flex-shrink-0">{indent ? '◦' : '•'}</span>
+          <div key={`bullet-${i}`} className={`flex items-start gap-2 text-sm leading-relaxed ${indent ? 'ml-4 text-gray-600' : 'text-gray-800'}`}>
+            <span className="text-brand-500 font-bold mt-0.5 flex-shrink-0">{indent ? '◦' : '•'}</span>
             <span dangerouslySetInnerHTML={{ __html: formatted.replace(/^[\s•\-◦]+/, '') }} />
           </div>
         )
-      } else if (line.match(/^\*\*.*\*\*$/) || line.match(/^\*\*.+\*\*/)) {
+      }
+      // Numbered items (1. 2. 3.)
+      else if (line.match(/^\d+\.\s/)) {
+        const numMatch = line.match(/^(\d+)\.\s/)?.[1]
         elements.push(
-          <p key={i} className="text-sm font-semibold text-gray-900 mt-3 mb-1"
+          <div key={`num-${i}`} className="flex items-start gap-2.5 text-sm leading-relaxed my-1">
+            <span className="w-5 h-5 rounded-full bg-brand-50 text-brand-700 font-bold text-xs flex items-center justify-center flex-shrink-0 mt-0.5 border border-brand-200">
+              {numMatch}
+            </span>
+            <span dangerouslySetInnerHTML={{ __html: formatted.replace(/^\d+\.\s/, '') }} />
+          </div>
+        )
+      }
+      // Bold subheaders
+      else if (line.match(/^\*\*.*\*\*$/) || line.match(/^\*\*.+\*\*/)) {
+        elements.push(
+          <p key={`bold-${i}`} className="text-sm font-semibold text-gray-900 mt-3 mb-1"
             dangerouslySetInnerHTML={{ __html: formatted }} />
         )
-      } else {
+      }
+      // Standard body paragraph
+      else {
         elements.push(
-          <p key={i} className="text-sm leading-relaxed"
+          <p key={`text-${i}`} className="text-sm leading-relaxed text-gray-800"
             dangerouslySetInnerHTML={{ __html: formatted }} />
         )
       }
@@ -101,7 +146,7 @@ function MessageContent({ content }: { content: string }) {
     i++
   }
 
-  return <div className="space-y-0.5">{elements}</div>
+  return <div className="space-y-1">{elements}</div>
 }
 
 export default function ChatPage() {

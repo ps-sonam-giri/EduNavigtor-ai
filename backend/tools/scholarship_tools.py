@@ -25,50 +25,23 @@ async def search_scholarships_tool(
     limit: int = 5,
 ) -> List[Dict[str, Any]]:
     """
-    Search scholarships matching student eligibility, country, and academic standing.
+    Search scholarships matching student eligibility and country via Tavily Live Web Search.
     """
-    engine = create_async_engine(settings.database_url, echo=False)
-    async_session = async_sessionmaker(engine, expire_on_commit=False)
+    from tools.tavily_tools import search_tavily_web
 
-    try:
-        async with async_session() as session:
-            stmt = select(Scholarship)
-            filters = []
-            if cgpa:
-                filters.append(or_(Scholarship.min_cgpa == None, Scholarship.min_cgpa <= cgpa))
+    query = f"scholarships for {nationality} students in {country or 'USA UK Germany Canada Australia'} 2025 2026 eligibility application deadline"
+    res = await search_tavily_web(query=query, max_results=min(limit, 10))
 
-            if filters:
-                stmt = stmt.where(*filters)
+    if res.get("status") == "success":
+        results = []
+        for r in res.get("results", []):
+            results.append({
+                "name": r.get("title", "Scholarship Result"),
+                "country": country or "International",
+                "content_snippet": r.get("content", "")[:300],
+                "url": r.get("url"),
+                "source": "Tavily Live Web Engine",
+            })
+        return results
 
-            stmt = stmt.limit(min(limit, 10))
-
-            result = await session.execute(stmt)
-            rows = result.scalars().all()
-            await engine.dispose()
-
-            matches = []
-            for s in rows:
-                # Filter eligibility by country/nationality
-                eligible_countries = s.eligible_countries or []
-                if (
-                    not eligible_countries
-                    or "All" in eligible_countries
-                    or (country and any(country.lower() in c.lower() for c in eligible_countries))
-                    or nationality in eligible_countries
-                ):
-                    matches.append({
-                        "name": s.name,
-                        "provider": s.provider or "N/A",
-                        "amount_usd": float(s.amount_usd or 0),
-                        "amount_description": s.amount_description or "Varies",
-                        "min_cgpa": float(s.min_cgpa or 0),
-                        "eligible_countries": s.eligible_countries or ["All"],
-                        "scholarship_basis": s.scholarship_basis or "Merit-based",
-                        "application_url": s.application_url or "",
-                        "description": s.description or "",
-                        "source": "EduPilot Verified Database",
-                    })
-
-            return matches[:limit]
-    except Exception as e:
-        return [{"error": f"Scholarship search failed: {str(e)}"}]
+    return [{"error": "Tavily scholarship search failed"}]
