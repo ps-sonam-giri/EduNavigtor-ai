@@ -3,7 +3,7 @@ import { useForm } from 'react-hook-form'
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
 import { profileApi } from '@/lib/api'
 import toast from 'react-hot-toast'
-import { Save, Upload, User, BookOpen, Globe, DollarSign, Briefcase, CheckCircle } from 'lucide-react'
+import { Save, Upload, User, BookOpen, Globe, DollarSign, Briefcase, CheckCircle, Trash2, AlertTriangle, Loader2 } from 'lucide-react'
 import { motion } from 'framer-motion'
 
 const COUNTRIES = ['United States', 'United Kingdom', 'Canada', 'Australia', 'Germany', 'Ireland', 'New Zealand']
@@ -18,6 +18,7 @@ export default function ProfilePage() {
   const qc = useQueryClient()
   const [selectedCountries, setSelectedCountries] = useState<string[]>([])
   const [saved, setSaved] = useState(false)
+  const [showDeleteConfirm, setShowDeleteConfirm] = useState(false)
 
   const { data: profile, isLoading } = useQuery({
     queryKey: ['profile'],
@@ -43,7 +44,6 @@ export default function ProfilePage() {
 
   const mutation = useMutation({
     mutationFn: async (raw: any) => {
-      // Clean: empty string → null, strings → numbers for numeric fields
       const clean: Record<string, any> = {}
       for (const [key, val] of Object.entries(raw)) {
         if (val === '' || val === undefined) {
@@ -59,7 +59,7 @@ export default function ProfilePage() {
       return profile ? profileApi.update(clean) : profileApi.create(clean)
     },
     onSuccess: (res) => {
-      toast.success('Profile saved!')
+      toast.success('Profile saved successfully!')
       setSaved(true)
       setTimeout(() => setSaved(false), 3000)
       qc.invalidateQueries({ queryKey: ['profile'] })
@@ -68,6 +68,24 @@ export default function ProfilePage() {
     onError: (err: any) => {
       const detail = err?.response?.data?.detail
       toast.error('Save failed: ' + (Array.isArray(detail) ? detail[0]?.msg : detail || err.message))
+    },
+  })
+
+  const deleteMutation = useMutation({
+    mutationFn: () => profileApi.delete(),
+    onSuccess: () => {
+      toast.success('User profile deleted successfully!')
+      setShowDeleteConfirm(false)
+      setSelectedCountries([])
+      reset({
+        cgpa: '', cgpa_scale: 10, degree: '', specialization: '', graduation_year: '', backlogs: '', university_name: '',
+        ielts_score: '', toefl_score: '', gre_score: '', gmat_score: '', course_interest: '', target_intake: '', career_goal: '',
+        total_budget_usd: '', financial_background: '', work_experience_years: '', work_description: ''
+      })
+      qc.invalidateQueries({ queryKey: ['profile'] })
+    },
+    onError: (err: any) => {
+      toast.error('Could not delete profile: ' + (err?.response?.data?.detail || err.message))
     },
   })
 
@@ -299,12 +317,26 @@ export default function ProfilePage() {
           )}
         </motion.div>
 
-        {/* Save */}
-        <div className="flex justify-end">
-          <button type="submit" disabled={mutation.isPending}
-            className="btn-primary flex items-center gap-2">
+        {/* Save & Delete Profile Buttons */}
+        <div className="flex items-center justify-between pt-2">
+          {/* Delete Profile Button */}
+          {profile ? (
+            <button
+              type="button"
+              onClick={() => setShowDeleteConfirm(true)}
+              className="text-xs text-red-600 hover:text-red-800 font-semibold flex items-center gap-1.5 px-3 py-2 rounded-lg border border-red-200 hover:bg-red-50 transition-colors"
+            >
+              <Trash2 className="w-4 h-4 text-red-500" /> Delete Profile
+            </button>
+          ) : <div />}
+
+          <button
+            type="submit"
+            disabled={mutation.isPending}
+            className="btn-primary flex items-center gap-2"
+          >
             {mutation.isPending
-              ? <><div className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin" /> Saving...</>
+              ? <><Loader2 className="w-4 h-4 animate-spin" /> Saving...</>
               : saved
                 ? <><CheckCircle className="w-4 h-4" /> Saved!</>
                 : <><Save className="w-4 h-4" /> Save Profile</>}
@@ -312,6 +344,50 @@ export default function ProfilePage() {
         </div>
 
       </form>
+
+      {/* Delete Confirmation Modal */}
+      {showDeleteConfirm && (
+        <div className="fixed inset-0 bg-black/50 backdrop-blur-sm flex items-center justify-center p-4 z-50">
+          <motion.div
+            initial={{ scale: 0.95, opacity: 0 }}
+            animate={{ scale: 1, opacity: 1 }}
+            className="bg-white rounded-2xl p-6 max-w-md w-full space-y-4 shadow-xl border border-gray-100"
+          >
+            <div className="flex items-center gap-3 text-red-600">
+              <div className="w-10 h-10 rounded-full bg-red-100 flex items-center justify-center shrink-0">
+                <AlertTriangle className="w-5 h-5 text-red-600" />
+              </div>
+              <div>
+                <h3 className="font-bold text-gray-900 text-lg">Delete Profile?</h3>
+                <p className="text-xs text-gray-500">This action cannot be undone.</p>
+              </div>
+            </div>
+
+            <p className="text-xs text-gray-600 leading-relaxed bg-red-50 p-3 rounded-xl border border-red-100">
+              Deleting your profile will permanently remove your stored academic scores (CGPA, IELTS, GRE), budget preferences, and uploaded documents.
+            </p>
+
+            <div className="flex items-center justify-end gap-3 pt-2">
+              <button
+                type="button"
+                onClick={() => setShowDeleteConfirm(false)}
+                className="btn-secondary text-xs px-4 py-2"
+              >
+                Cancel
+              </button>
+              <button
+                type="button"
+                onClick={() => deleteMutation.mutate()}
+                disabled={deleteMutation.isPending}
+                className="bg-red-600 hover:bg-red-700 text-white text-xs font-bold px-4 py-2 rounded-xl transition-colors flex items-center gap-1.5 disabled:opacity-50"
+              >
+                {deleteMutation.isPending ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : <Trash2 className="w-3.5 h-3.5" />}
+                Yes, Delete Profile
+              </button>
+            </div>
+          </motion.div>
+        </div>
+      )}
     </div>
   )
 }

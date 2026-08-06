@@ -121,3 +121,22 @@ async def upload_document(
         await db.commit()
 
     return {"doc_type": doc_type, "filename": filename, "path": str(file_path), "size_bytes": len(content)}
+
+
+@router.delete("", status_code=status.HTTP_200_OK)
+async def delete_profile(
+    db: AsyncSession = Depends(get_db),
+    current_user: User = Depends(get_current_active_user),
+):
+    """Delete current user's student profile."""
+    result = await db.execute(
+        select(StudentProfile).where(StudentProfile.user_id == current_user.id)
+    )
+    profile = result.scalar_one_or_none()
+    if not profile:
+        raise HTTPException(status_code=404, detail="Profile not found.")
+
+    await db.delete(profile)
+    await db.commit()
+    return {"status": "deleted", "message": "User profile deleted successfully."}
+
