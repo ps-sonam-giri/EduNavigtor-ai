@@ -61,3 +61,42 @@ async def test_verifier_node_success():
 
     result = await verifier_node(state)
     assert result["verifier_passed"] is True
+
+
+@pytest.mark.asyncio
+async def test_graph_loops_back_on_verifier_failure():
+    """
+    A verifier failure with turns remaining should route back to agent_decide.
+    """
+    from agents.orchestrator import route_after_verifier
+
+    state = {
+        "verifier_passed": False,
+        "turn_count": 2,
+        "max_turns": 6,
+    }
+    assert route_after_verifier(state) == "agent_decide"
+
+
+@pytest.mark.asyncio
+async def test_graph_ends_at_max_turns_even_if_verifier_fails():
+    from agents.orchestrator import route_after_verifier
+
+    state = {
+        "verifier_passed": False,
+        "turn_count": 6,
+        "max_turns": 6,
+    }
+    assert route_after_verifier(state) == "end"
+
+
+@pytest.mark.asyncio
+async def test_graph_ends_when_verifier_passes():
+    from agents.orchestrator import route_after_verifier
+
+    state = {
+        "verifier_passed": True,
+        "turn_count": 3,
+        "max_turns": 6,
+    }
+    assert route_after_verifier(state) == "end"

@@ -37,7 +37,8 @@ RULES FOR DECISION-MAKING:
 1. If you need data (universities, scholarships, financial calculations, document parsing), choose a TOOL ACTION.
 2. If you have gathered all necessary observations to answer the query completely, choose "finish".
 3. Always base your final answer strictly on returned tool observations. Do not invent unverified facts.
-4. ANSWER FORMATTING REQUIREMENTS (CRITICAL FOR USER READABILITY):
+4. If PREVIOUS VERIFIER CRITIQUE is present in context, you MUST either call a tool to fix the flagged issue, or finish with a corrected final_answer that resolves every flagged violation.
+5. ANSWER FORMATTING REQUIREMENTS (CRITICAL FOR USER READABILITY):
    - Start with a clear Executive Summary block (e.g., 🎯 **Executive Brief**).
    - Use Markdown Tables with clean column headers for multi-item comparisons (universities, fees, scholarships).
    - Use section headers (### 🎓 Top Universities, ### 🏆 Scholarship Matches, ### 💰 Financial Breakdown, ### 📌 Action Plan).
@@ -48,18 +49,18 @@ RULES FOR DECISION-MAKING:
 Respond ONLY with a valid JSON object matching ONE of these formats:
 
 Format A (Call a Tool):
-{{
+{
   "thought": "Reasoning about what tool to call next...",
   "action": "tool_name",
-  "action_input": {{ "arg1": "val1" }}
-}}
+  "action_input": { "arg1": "val1" }
+}
 
 Format B (Finish & Output Final Answer):
-{{
+{
   "thought": "Reasoning about why we have sufficient data...",
   "action": "finish",
   "final_answer": "Beautifully formatted executive answer with tables, structured bullet points, and actionable next steps."
-}}
+}
 """
 
 
@@ -188,8 +189,19 @@ def route_next_step(state: AgentState) -> str:
     return "verifier"
 
 
+def route_after_verifier(state: AgentState) -> str:
+    """Routing function for the conditional edge out of the verifier."""
+    turn_count = state.get("turn_count", 0)
+    max_turns = state.get("max_turns", 6)
+    verifier_passed = state.get("verifier_passed", True)
+
+    if not verifier_passed and turn_count < max_turns:
+        return "agent_decide"
+    return "end"
+
+
 def build_workflow() -> StateGraph:
-    """Construct ReAct Agent Workflow StateGraph."""
+    """Construct ReAct Agent Workflow StateGraph with Verifier Self-Correction Loop."""
     graph = StateGraph(AgentState)
 
     # Add Nodes
@@ -213,8 +225,15 @@ def build_workflow() -> StateGraph:
     # Loop back from Tool Execution to Agent Decision
     graph.add_edge("tool_execute", "agent_decide")
 
-    # Verifier -> END
-    graph.add_edge("verifier", END)
+    # Verifier -> Conditionally loop back to agent_decide if verification failed, or END if passed/max turns
+    graph.add_conditional_edges(
+        "verifier",
+        route_after_verifier,
+        {
+            "agent_decide": "agent_decide",
+            "end": END,
+        },
+    )
 
     return graph.compile()
 
