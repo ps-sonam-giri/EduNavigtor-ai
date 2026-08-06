@@ -283,10 +283,14 @@ async def _auto_create_report(
         if result.scalar_one_or_none():
             return  # Already exists
 
-        # Only create if meaningful agents ran
-        meaningful = {"university_agent", "scholarship_agent", "finance_agent",
-                      "timeline_agent", "report_agent"}
-        if not any(a in meaningful for a in agents_executed):
+        # Only create if meaningful results were returned
+        has_content = (
+            output.get("recommended_universities")
+            or output.get("matched_scholarships")
+            or output.get("finance_breakdown")
+            or output.get("message")
+        )
+        if not has_content:
             return
 
         # Build report content from output

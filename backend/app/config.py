@@ -31,22 +31,36 @@ class Settings(BaseSettings):
     database_sync_url: str = "postgresql://edupilot:edupilot_pass@localhost:5432/edupilot_db"
 
     # ── LLM Provider ─────────────────────────────────────────────────────────
-    llm_provider: str = "gemini"        # "gemini" | "ollama"
+    llm_provider: str = "auto"        # "auto" | "gemini" | "groq" | "ollama"
 
     # ── Gemini ───────────────────────────────────────────────────────────────
     gemini_api_key: str = ""
-    gemini_model: str = "gemini-3.5-flash-lite"
+    gemini_model: str = "gemini-1.5-flash"
 
-    # ── Ollama (fallback) ─────────────────────────────────────────────────────
+    # ── Groq (Fallback 1) ───────────────────────────────────────────────────
+    groq_api_key: str = ""
+    groq_model: str = "llama-3.3-70b-versatile"
+
+    # ── Ollama (Fallback 2) ─────────────────────────────────────────────────
     ollama_base_url: str = "http://localhost:11434"
     ollama_model: str = "qwen2.5"
     ollama_temperature: float = 0.7
     ollama_max_tokens: int = 4096
 
+    # ── Tavily Live Search ───────────────────────────────────────────────────
+    tavily_api_key: str = ""
+
     # ── MCP Servers ──────────────────────────────────────────────────────────
     mcp_gmail_server_port: int = 8001
     mcp_filesystem_server_port: int = 8002
     mcp_postgres_server_port: int = 8003
+
+    # ── Gmail / SMTP Email Delivery ──────────────────────────────────────────
+    smtp_server: str = "smtp.gmail.com"
+    smtp_port: int = 587
+    smtp_username: str = ""
+    smtp_password: str = ""
+    smtp_sender: str = ""
 
     # ── Gmail OAuth ──────────────────────────────────────────────────────────
     gmail_client_id: str = ""

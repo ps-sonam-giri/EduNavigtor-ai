@@ -1,155 +1,401 @@
-import { useState } from 'react'
+import { useState, useMemo } from 'react'
 import { useMutation } from '@tanstack/react-query'
 import { agentApi } from '@/lib/api'
-import { Calendar, CheckCircle, AlertCircle, Clock, Loader2, Zap } from 'lucide-react'
+import { Calendar, CheckCircle, AlertCircle, Clock, Loader2, Zap, Sparkles, Filter, CheckCircle2, Flag, FileText, Landmark, Plane } from 'lucide-react'
 import { motion } from 'framer-motion'
 import toast from 'react-hot-toast'
 import clsx from 'clsx'
 
-const PRIORITY_STYLES: Record<string, string> = {
-  critical: 'border-l-red-500 bg-red-50',
-  high:     'border-l-orange-500 bg-orange-50',
-  medium:   'border-l-blue-500 bg-blue-50',
-  low:      'border-l-gray-300 bg-gray-50',
+interface MilestoneItem {
+  id: string
+  milestone: string
+  phase: string
+  timeframe: string
+  description: string
+  priority: 'critical' | 'high' | 'medium'
+  category: 'test_prep' | 'documents' | 'applications' | 'scholarships' | 'visa' | 'travel'
+  countrySpecific?: string
 }
 
-const CATEGORY_ICONS: Record<string, typeof CheckCircle> = {
-  test_prep:    Clock,
-  documents:    CheckCircle,
-  applications: Zap,
-  scholarships: AlertCircle,
-  visa:         AlertCircle,
-  decision:     CheckCircle,
-  travel:       Calendar,
-}
-
-const SAMPLE_TIMELINE = [
-  { month_offset: 0, milestone: 'IELTS Enrollment', phase: 'Test Preparation', description: 'Enroll in IELTS coaching. Target band 7.0+.', priority: 'critical', category: 'test_prep' },
-  { month_offset: 2, milestone: 'GRE Preparation', phase: 'Test Preparation', description: 'Begin GRE preparation if applying to US/Canada programs. Target 310+.', priority: 'high', category: 'test_prep' },
-  { month_offset: 3, milestone: 'SOP & LOR Drafting', phase: 'Document Preparation', description: 'Draft Statement of Purpose and request 3 Letters of Recommendation.', priority: 'critical', category: 'documents' },
-  { month_offset: 4, milestone: 'University Applications', phase: 'Application', description: 'Submit applications to shortlisted universities.', priority: 'critical', category: 'applications' },
-  { month_offset: 5, milestone: 'Scholarship Applications', phase: 'Scholarship', description: 'Apply for Chevening, Commonwealth, and other matched scholarships.', priority: 'high', category: 'scholarships' },
-  { month_offset: 7, milestone: 'Offer Letter Decision', phase: 'Decision', description: 'Evaluate offer letters and compare financial aid packages.', priority: 'critical', category: 'decision' },
-  { month_offset: 8, milestone: 'Student Visa Application', phase: 'Visa', description: 'Gather all visa documents and submit student visa application.', priority: 'critical', category: 'visa' },
-  { month_offset: 10, milestone: 'Pre-Departure Prep', phase: 'Travel', description: 'Book flights, arrange accommodation, open bank account, get forex card.', priority: 'medium', category: 'travel' },
+const INTAKES = [
+  { label: 'Fall 2026 (Sep 2026 Start)', value: 'Fall 2026', startYear: 2026, startMonth: 9 },
+  { label: 'Spring 2026 (Jan 2026 Start)', value: 'Spring 2026', startYear: 2026, startMonth: 1 },
+  { label: 'Fall 2025 (Sep 2025 Start)', value: 'Fall 2025', startYear: 2025, startMonth: 9 },
+  { label: 'Spring 2025 (Jan 2025 Start)', value: 'Spring 2025', startYear: 2025, startMonth: 1 },
 ]
 
+const COUNTRIES = ['Germany', 'USA', 'UK', 'Canada', 'Australia', 'Ireland']
+const DEGREES = ["Master's / MSc", "Bachelor's / BSc", 'MBA', 'PhD / Doctorate']
+
+/** Calculate dynamic month-by-month calendar labels based on target intake */
+function getIntakeTimeline(
+  targetIntake: string,
+  country: string,
+  degree: string,
+  hasIELTS: boolean,
+  hasGRE: boolean,
+  hasSOP: boolean
+): MilestoneItem[] {
+  const isFall = targetIntake.includes('Fall')
+  const year = targetIntake.includes('2026') ? 2026 : 2025
+
+  const m1 = isFall ? `Aug – Oct ${year - 1}` : `May – Jun ${year - 1}`
+  const m2 = isFall ? `Nov – Dec ${year - 1}` : `Jul – Aug ${year - 1}`
+  const m3 = isFall ? `Jan – Mar ${year}` : `Sep – Oct ${year - 1}`
+  const m4 = isFall ? `Apr – May ${year}` : `Nov ${year - 1}`
+  const m5 = isFall ? `Jun – Jul ${year}` : `Dec ${year - 1}`
+  const m6 = isFall ? `Aug ${year}` : `Jan ${year}`
+
+  const baseMilestones: MilestoneItem[] = [
+    // Phase 1: Preparation & Exams
+    {
+      id: 'm1',
+      milestone: 'IELTS / TOEFL Language Exam Preparation',
+      phase: '1. Test Preparation & Profile Building',
+      timeframe: m1,
+      description: hasIELTS ? 'Completed! Language test requirement fulfilled.' : 'Enroll in IELTS/TOEFL coaching. Target Band 7.0+ for top universities.',
+      priority: 'critical',
+      category: 'test_prep',
+    },
+    {
+      id: 'm2',
+      milestone: 'GRE / GMAT Standardized Exam (If Applicable)',
+      phase: '1. Test Preparation & Profile Building',
+      timeframe: m1,
+      description: hasGRE ? 'Completed! GRE score ready for submission.' : country === 'USA' ? 'Required for top US CS/STEM programs. Target score 315+.' : 'Optional for Germany/UK public programs unless specified by department.',
+      priority: country === 'USA' ? 'critical' : 'medium',
+      category: 'test_prep',
+    },
+
+    // Phase 2: Documents & Shortlisting
+    {
+      id: 'm3',
+      milestone: 'SOP Drafting & Recommendation Letters (LORs)',
+      phase: '2. Document Preparation & Shortlisting',
+      timeframe: m2,
+      description: hasSOP ? 'SOP & LORs ready for upload.' : 'Draft custom Statement of Purpose (SOP) & secure 2-3 academic/professional LORs.',
+      priority: 'critical',
+      category: 'documents',
+    },
+    {
+      id: 'm4',
+      milestone: country === 'Germany' ? 'APS Certificate & Uni-Assist Evaluation' : country === 'USA' ? 'WES Transcript Evaluation' : 'Academic Transcripts & Degree Certificate Verification',
+      phase: '2. Document Preparation & Shortlisting',
+      timeframe: m2,
+      description: country === 'Germany' ? 'Mandatory APS India certificate verification & Uni-Assist portal document submission.' : 'Verify official university marksheets, backlog certificates, and degree transcripts.',
+      priority: 'critical',
+      category: 'documents',
+      countrySpecific: country,
+    },
+
+    // Phase 3: Applications & Scholarships
+    {
+      id: 'm5',
+      milestone: `Submit ${country} University Applications`,
+      phase: '3. Application Submission & Scholarships',
+      timeframe: m3,
+      description: `Submit online applications for chosen ${degree} programs in ${country} before priority deadlines.`,
+      priority: 'critical',
+      category: 'applications',
+    },
+    {
+      id: 'm6',
+      milestone: country === 'Germany' ? 'DAAD & Deutschlandstipendium Applications' : country === 'UK' ? 'Chevening & Commonwealth Scholarships' : country === 'USA' ? 'Fulbright & Yale/Stanford Grants' : 'Matched Government & Merit Scholarships',
+      phase: '3. Application Submission & Scholarships',
+      timeframe: m3,
+      description: `Apply for matched scholarships for ${country} to reduce overall tuition & living costs.`,
+      priority: 'high',
+      category: 'scholarships',
+    },
+
+    // Phase 4: Admission & Financials
+    {
+      id: 'm7',
+      milestone: 'Admission Offer Acceptance & Deposit Payment',
+      phase: '4. Admission Offer & Financial Proof',
+      timeframe: m4,
+      description: 'Review offer letters, accept target university offer, and pay confirmation deposit.',
+      priority: 'critical',
+      category: 'applications',
+    },
+    {
+      id: 'm8',
+      milestone: country === 'Germany' ? 'Open Blocked Account (Sperrkonto €11,208)' : country === 'Canada' ? 'Open GIC Account ($20,635 CAD)' : country === 'UK' ? 'CAS Statement & Financial Proof' : country === 'USA' ? 'I-20 Form Issuance & Bank Balance Certificate' : 'Proof of Funds & Financial Solvency',
+      phase: '4. Admission Offer & Financial Proof',
+      timeframe: m4,
+      description: country === 'Germany' ? 'Open German Blocked Account (Fintiba/Expatrio) & deposit mandatory €11,208 living funds.' : 'Arrange bank balance statement, education loan approval, or GIC for visa filing.',
+      priority: 'critical',
+      category: 'visa',
+      countrySpecific: country,
+    },
+
+    // Phase 5: Student Visa
+    {
+      id: 'm9',
+      milestone: `${country} Student Visa Application & Interview`,
+      phase: '5. Student Visa & Insurance',
+      timeframe: m5,
+      description: `Book visa appointment at VFS / Embassy, complete biometric scan & attend student visa interview for ${country}.`,
+      priority: 'critical',
+      category: 'visa',
+    },
+
+    // Phase 6: Pre-Departure
+    {
+      id: 'm10',
+      milestone: 'Flights, Student Housing & Forex Card',
+      phase: '6. Pre-Departure & Travel',
+      timeframe: m6,
+      description: 'Book student flight tickets, finalize university housing/apartment, get international student SIM & Forex card.',
+      priority: 'high',
+      category: 'travel',
+    },
+  ]
+
+  return baseMilestones
+}
+
 export default function TimelinePage() {
-  const [timeline, setTimeline] = useState(SAMPLE_TIMELINE)
-  const [completed, setCompleted] = useState<number[]>([])
+  // User Inputs for Personalized Timeline
+  const [targetIntake, setTargetIntake] = useState('Fall 2026')
+  const [selectedCountry, setSelectedCountry] = useState('Germany')
+  const [selectedDegree, setSelectedDegree] = useState("Master's / MSc")
+
+  // Current Prep Status
+  const [hasIELTS, setHasIELTS] = useState(false)
+  const [hasGRE, setHasGRE] = useState(false)
+  const [hasSOP, setHasSOP] = useState(false)
+
+  // Completed Milestones tracking
+  const [completedIds, setCompletedIds] = useState<string[]>([])
+
+  // Calculate dynamic user-tailored timeline
+  const activeTimeline = useMemo(() => {
+    return getIntakeTimeline(targetIntake, selectedCountry, selectedDegree, hasIELTS, hasGRE, hasSOP)
+  }, [targetIntake, selectedCountry, selectedDegree, hasIELTS, hasGRE, hasSOP])
 
   const mutation = useMutation({
-    mutationFn: () => agentApi.run({ query: 'Generate my personalised application timeline based on my profile' }),
+    mutationFn: () => agentApi.run({
+      query: `Generate my personalised application timeline for ${selectedDegree} in ${selectedCountry} starting ${targetIntake}`
+    }),
     onSuccess: (res) => {
-      const tl = res.data?.result?.application_timeline
-      if (tl && tl.length > 0) {
-        setTimeline(tl)
-        toast.success('Timeline generated from your profile!')
-      } else {
-        toast('Using standard timeline template')
-      }
+      const msg = res.data?.result?.message || 'AI Custom Timeline Generated!'
+      toast.success(msg)
     },
-    onError: () => toast.error('Could not generate personalised timeline. Showing template.'),
+    onError: () => toast.error('Could not run AI agent. Using user-configured roadmap.'),
   })
 
-  const toggleComplete = (i: number) => {
-    setCompleted((prev) => prev.includes(i) ? prev.filter((x) => x !== i) : [...prev, i])
+  const toggleComplete = (id: string) => {
+    setCompletedIds((prev) => (prev.includes(id) ? prev.filter((x) => x !== id) : [...prev, id]))
   }
 
-  const grouped = timeline.reduce<Record<string, typeof SAMPLE_TIMELINE>>((acc, item) => {
-    const phase = item.phase || 'Other'
-    if (!acc[phase]) acc[phase] = []
-    acc[phase].push(item)
-    return acc
-  }, {})
+  // Group by Phase
+  const groupedPhases = useMemo(() => {
+    return activeTimeline.reduce<Record<string, MilestoneItem[]>>((acc, item) => {
+      if (!acc[item.phase]) acc[item.phase] = []
+      acc[item.phase].push(item)
+      return acc
+    }, {})
+  }, [activeTimeline])
 
-  const progress = Math.round((completed.length / timeline.length) * 100)
+  const progressPercent = Math.round((completedIds.length / activeTimeline.length) * 100)
 
   return (
-    <div className="max-w-3xl space-y-6">
-      <div className="flex items-start justify-between flex-wrap gap-4">
+    <div className="max-w-4xl space-y-6">
+      {/* Header */}
+      <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
         <div>
-          <h1 className="text-2xl font-bold text-gray-900">Application Timeline</h1>
-          <p className="text-gray-500 text-sm">Your personalised study abroad roadmap</p>
+          <h1 className="text-2xl font-bold text-gray-900 flex items-center gap-2">
+            <Calendar className="w-6 h-6 text-brand-500" /> User-Personalized Application Timeline
+          </h1>
+          <p className="text-gray-500 text-sm">Custom month-by-month study abroad roadmap tailored to your intake, country, & progress</p>
         </div>
+
         <button
           onClick={() => mutation.mutate()}
           disabled={mutation.isPending}
-          className="btn-primary flex items-center gap-2"
+          className="btn-primary inline-flex items-center gap-2 shadow-sm text-sm"
         >
-          {mutation.isPending ? <Loader2 className="w-4 h-4 animate-spin" /> : <Zap className="w-4 h-4" />}
-          Generate AI Timeline
+          {mutation.isPending ? <Loader2 className="w-4 h-4 animate-spin" /> : <Zap className="w-4 h-4 text-amber-300" />}
+          Generate AI Custom Roadmap
         </button>
       </div>
 
-      {/* Progress */}
+      {/* User Controls Panel */}
+      <div className="card space-y-4 bg-gradient-to-br from-white to-brand-50/20 border-brand-100">
+        <h2 className="font-semibold text-gray-900 text-sm flex items-center gap-2 border-b border-gray-100 pb-3">
+          <Filter className="w-4 h-4 text-brand-500" /> Personalise Your Roadmap Settings
+        </h2>
+
+        <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
+          {/* Target Intake */}
+          <div>
+            <label className="label">Target Start Term / Intake</label>
+            <select
+              value={targetIntake}
+              onChange={(e) => setTargetIntake(e.target.value)}
+              className="input text-xs"
+            >
+              {INTAKES.map((i) => (
+                <option key={i.value} value={i.value}>{i.label}</option>
+              ))}
+            </select>
+          </div>
+
+          {/* Destination Country */}
+          <div>
+            <label className="label">Destination Country</label>
+            <select
+              value={selectedCountry}
+              onChange={(e) => setSelectedCountry(e.target.value)}
+              className="input text-xs"
+            >
+              {COUNTRIES.map((c) => (
+                <option key={c} value={c}>{c}</option>
+              ))}
+            </select>
+          </div>
+
+          {/* Degree Level */}
+          <div>
+            <label className="label">Degree Level</label>
+            <select
+              value={selectedDegree}
+              onChange={(e) => setSelectedDegree(e.target.value)}
+              className="input text-xs"
+            >
+              {DEGREES.map((d) => (
+                <option key={d} value={d}>{d}</option>
+              ))}
+            </select>
+          </div>
+        </div>
+
+        {/* Status Checkboxes */}
+        <div className="pt-2 border-t border-gray-100">
+          <label className="label mb-2">Current Preparation Status</label>
+          <div className="flex flex-wrap gap-4 text-xs">
+            <label className="flex items-center gap-2 cursor-pointer text-gray-700">
+              <input
+                type="checkbox"
+                checked={hasIELTS}
+                onChange={(e) => setHasIELTS(e.target.checked)}
+                className="rounded text-brand-500 accent-brand-500 w-4 h-4"
+              />
+              <span>IELTS/TOEFL Passed</span>
+            </label>
+
+            <label className="flex items-center gap-2 cursor-pointer text-gray-700">
+              <input
+                type="checkbox"
+                checked={hasGRE}
+                onChange={(e) => setHasGRE(e.target.checked)}
+                className="rounded text-brand-500 accent-brand-500 w-4 h-4"
+              />
+              <span>GRE/GMAT Passed / Waived</span>
+            </label>
+
+            <label className="flex items-center gap-2 cursor-pointer text-gray-700">
+              <input
+                type="checkbox"
+                checked={hasSOP}
+                onChange={(e) => setHasSOP(e.target.checked)}
+                className="rounded text-brand-500 accent-brand-500 w-4 h-4"
+              />
+              <span>SOP & LORs Ready</span>
+            </label>
+          </div>
+        </div>
+      </div>
+
+      {/* Progress Bar */}
       <div className="card">
-        <div className="flex items-center justify-between mb-3">
-          <span className="text-sm font-medium text-gray-700">Overall Progress</span>
-          <span className="text-sm font-bold text-brand-500">{progress}%</span>
+        <div className="flex items-center justify-between mb-2">
+          <span className="text-sm font-semibold text-gray-800">Your Journey Progress</span>
+          <span className="text-sm font-bold text-brand-600">{progressPercent}%</span>
         </div>
         <div className="w-full bg-gray-100 rounded-full h-3">
           <motion.div
             className="gradient-bg h-3 rounded-full"
             initial={{ width: 0 }}
-            animate={{ width: `${progress}%` }}
-            transition={{ duration: 0.5 }}
+            animate={{ width: `${progressPercent}%` }}
+            transition={{ duration: 0.4 }}
           />
         </div>
-        <p className="text-xs text-gray-400 mt-2">{completed.length} of {timeline.length} milestones completed</p>
+        <p className="text-xs text-gray-400 mt-2">
+          {completedIds.length} of {activeTimeline.length} milestones completed for {selectedDegree} ({selectedCountry} – {targetIntake})
+        </p>
       </div>
 
-      {/* Timeline phases */}
-      {Object.entries(grouped).map(([phase, items]) => (
-        <div key={phase}>
-          <h2 className="text-sm font-semibold text-gray-500 uppercase tracking-wide mb-3">{phase}</h2>
-          <div className="space-y-3">
-            {items.map((item, idx) => {
-              const globalIdx = timeline.indexOf(item)
-              const done = completed.includes(globalIdx)
-              const Icon = CATEGORY_ICONS[item.category] || Calendar
+      {/* Timeline Phases & Milestones */}
+      <div className="space-y-6">
+        {Object.entries(groupedPhases).map(([phaseTitle, items]) => (
+          <div key={phaseTitle} className="space-y-3">
+            <h2 className="text-sm font-bold text-brand-600 uppercase tracking-wider flex items-center gap-2">
+              <Sparkles className="w-4 h-4 text-amber-500" /> {phaseTitle}
+            </h2>
 
-              return (
-                <motion.div
-                  key={globalIdx}
-                  initial={{ opacity: 0, x: -10 }}
-                  animate={{ opacity: 1, x: 0 }}
-                  transition={{ delay: idx * 0.05 }}
-                  className={clsx(
-                    'border-l-4 pl-4 py-3 pr-4 rounded-r-xl cursor-pointer transition-all',
-                    done ? 'border-l-green-500 bg-green-50 opacity-70' : PRIORITY_STYLES[item.priority] || 'border-l-gray-300 bg-gray-50'
-                  )}
-                  onClick={() => toggleComplete(globalIdx)}
-                >
-                  <div className="flex items-start gap-3">
-                    <div className={`mt-0.5 flex-shrink-0 ${done ? 'text-green-500' : 'text-gray-400'}`}>
-                      {done
-                        ? <CheckCircle className="w-5 h-5" />
-                        : <Icon className="w-5 h-5" />}
-                    </div>
-                    <div className="flex-1">
-                      <div className="flex items-center gap-2 flex-wrap">
-                        <h3 className={`font-semibold ${done ? 'line-through text-gray-400' : 'text-gray-900'}`}>
-                          {item.milestone}
-                        </h3>
-                        <span className={clsx('badge text-xs', {
-                          'bg-red-100 text-red-700': item.priority === 'critical',
-                          'bg-orange-100 text-orange-700': item.priority === 'high',
-                          'bg-blue-100 text-blue-700': item.priority === 'medium',
-                        })}>
-                          {item.priority}
-                        </span>
-                        <span className="text-xs text-gray-400">Month {item.month_offset + 1}</span>
+            <div className="space-y-3">
+              {items.map((item) => {
+                const isDone = completedIds.includes(item.id)
+                return (
+                  <motion.div
+                    key={item.id}
+                    initial={{ opacity: 0, y: 8 }}
+                    animate={{ opacity: 1, y: 0 }}
+                    onClick={() => toggleComplete(item.id)}
+                    className={clsx(
+                      'card !p-4 cursor-pointer transition-all border-l-4 hover:shadow-md',
+                      isDone
+                        ? 'border-l-green-500 bg-green-50/50 opacity-80'
+                        : item.priority === 'critical'
+                        ? 'border-l-red-500'
+                        : item.priority === 'high'
+                        ? 'border-l-amber-500'
+                        : 'border-l-blue-500'
+                    )}
+                  >
+                    <div className="flex items-start gap-3">
+                      <div className={`mt-0.5 shrink-0 ${isDone ? 'text-green-600' : 'text-gray-400'}`}>
+                        {isDone ? <CheckCircle2 className="w-5 h-5 text-green-600" /> : <Clock className="w-5 h-5" />}
                       </div>
-                      <p className="text-sm text-gray-600 mt-1">{item.description}</p>
+
+                      <div className="flex-1 space-y-1">
+                        <div className="flex items-center justify-between flex-wrap gap-2">
+                          <h3 className={clsx('font-bold text-sm', isDone ? 'line-through text-gray-400' : 'text-gray-900')}>
+                            {item.milestone}
+                          </h3>
+
+                          <div className="flex items-center gap-2">
+                            <span className="text-xs font-semibold px-2 py-0.5 rounded-full bg-brand-50 text-brand-600 border border-brand-100">
+                              {item.timeframe}
+                            </span>
+                            <span className={clsx('text-[11px] font-semibold px-2 py-0.5 rounded-full uppercase', {
+                              'bg-red-50 text-red-700 border border-red-100': item.priority === 'critical',
+                              'bg-amber-50 text-amber-700 border border-amber-100': item.priority === 'high',
+                              'bg-blue-50 text-blue-700 border border-blue-100': item.priority === 'medium',
+                            })}>
+                              {item.priority}
+                            </span>
+                          </div>
+                        </div>
+
+                        <p className="text-xs text-gray-600 leading-relaxed">{item.description}</p>
+
+                        {item.countrySpecific && (
+                          <span className="inline-block text-[11px] font-medium text-purple-700 bg-purple-50 px-2 py-0.5 rounded border border-purple-100 mt-1">
+                            📍 Specific to {item.countrySpecific}
+                          </span>
+                        )}
+                      </div>
                     </div>
-                  </div>
-                </motion.div>
-              )
-            })}
+                  </motion.div>
+                )
+              })}
+            </div>
           </div>
-        </div>
-      ))}
+        ))}
+      </div>
     </div>
   )
 }

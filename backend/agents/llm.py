@@ -1,6 +1,8 @@
 """
-LLM client – Gemini with Google Search grounding + Ollama fallback.
-Web search is automatically used by Gemini to provide current, accurate data.
+LLM client – 3-Tier Fallback Cascade:
+1. Gemini (Primary, with Google Search grounding option)
+2. Groq API (Fallback 1: Llama-3.3-70b-versatile)
+3. Ollama (Fallback 2: Local Qwen2.5)
 """
 
 import asyncio
@@ -9,6 +11,7 @@ import logging
 import re
 from typing import Any, Dict, Tuple
 
+import httpx
 from app.config import settings
 
 logger = logging.getLogger(__name__)
@@ -16,27 +19,34 @@ logger = logging.getLogger(__name__)
 
 async def ainvoke_llm(prompt: str, fast: bool = False, use_search: bool = False) -> Tuple[str, int]:
     """
-    Invoke LLM. Returns (response_text, token_count).
-    use_search=True enables Gemini Google Search grounding for real-time data.
+    Invoke LLM with 3-tier fallback cascade:
+    Gemini -> Groq -> Local Ollama
+    Returns (response_text, token_count).
     """
-    if settings.llm_provider == "gemini" and settings.gemini_api_key:
-        return await _invoke_gemini(prompt, use_search=use_search)
-    return await _invoke_ollama(prompt, fast)
+    # 1. Try Gemini (if configured)
+    if settings.gemini_api_key and settings.gemini_api_key.strip():
+        res, tokens = await _invoke_gemini(prompt, use_search=use_search)
+        if res and not res.startswith("[LLM unavailable"):
+            return res, tokens
+
+    # 2. Fallback to Groq (if configured)
+    if settings.groq_api_key and settings.groq_api_key.strip():
+        res, tokens = await _invoke_groq(prompt, fast=fast)
+        if res and not res.startswith("[LLM unavailable"):
+            return res, tokens
+
+    # 3. Fallback to local Ollama
+    return await _invoke_ollama(prompt, fast=fast)
 
 
 async def _invoke_gemini(prompt: str, use_search: bool = False) -> Tuple[str, int]:
-    """
-    Call Gemini API in a thread executor (non-blocking).
-    Enables Google Search grounding when use_search=True for real-time web data.
-    Hard 30s timeout per call. Retries once on 429.
-    """
+    """Call Gemini API with 30s timeout and search grounding option."""
     def _sync_call() -> str:
         from google import genai
         from google.genai import types
 
         client = genai.Client(api_key=settings.gemini_api_key)
 
-        # Build config — enable Google Search grounding for real-time data
         config_kwargs = dict(
             temperature=0.4,
             max_output_tokens=2048,
@@ -46,7 +56,7 @@ async def _invoke_gemini(prompt: str, use_search: bool = False) -> Tuple[str, in
             try:
                 config_kwargs["tools"] = [types.Tool(google_search=types.GoogleSearch())]
             except Exception:
-                pass  # Search not available — proceed without it
+                pass
 
         response = client.models.generate_content(
             model=settings.gemini_model,
@@ -66,34 +76,53 @@ async def _invoke_gemini(prompt: str, use_search: bool = False) -> Tuple[str, in
             tokens = len(text.split()) * 4 // 3
             logger.info(f"Gemini{'[search]' if use_search else ''} response ({len(text)} chars)")
             return text, tokens
-
         except asyncio.TimeoutError:
             logger.warning(f"Gemini timeout (attempt {attempt+1})")
             if attempt == 0:
                 await asyncio.sleep(2)
                 continue
             break
-
         except Exception as e:
-            err = str(e)
-            if "429" in err or "RESOURCE_EXHAUSTED" in err:
-                if "PerDay" in err:
-                    logger.warning("Gemini daily quota exhausted — falling back to Ollama")
-                    break
-                if attempt == 0:
-                    logger.warning("Gemini rate limited — waiting 10s and retrying")
-                    await asyncio.sleep(10)
-                    continue
-                break
-            else:
-                logger.warning(f"Gemini error: {e} — falling back to Ollama")
-                break
+            logger.warning(f"Gemini error: {e} — cascading to Groq/Ollama")
+            break
 
-    return await _invoke_ollama(prompt, fast=True)
+    return "", 0
+
+
+async def _invoke_groq(prompt: str, fast: bool = False) -> Tuple[str, int]:
+    """Call Groq API (Llama-3.3-70b-versatile) via async HTTP."""
+    url = "https://api.groq.com/openai/v1/chat/completions"
+    headers = {
+        "Authorization": f"Bearer {settings.groq_api_key}",
+        "Content-Type": "application/json",
+    }
+    payload = {
+        "model": settings.groq_model or "llama-3.3-70b-versatile",
+        "messages": [{"role": "user", "content": prompt}],
+        "temperature": 0.3 if fast else 0.5,
+        "max_tokens": 1024 if fast else 2048,
+    }
+
+    try:
+        async with httpx.AsyncClient(timeout=30.0) as client:
+            resp = await client.post(url, headers=headers, json=payload)
+            if resp.status_code == 200:
+                data = resp.json()
+                text = data["choices"][0]["message"]["content"]
+                usage = data.get("usage", {})
+                tokens = usage.get("total_tokens", len(text.split()) * 4 // 3)
+                logger.info(f"Groq ({settings.groq_model}) response ({len(text)} chars)")
+                return text, tokens
+            else:
+                logger.warning(f"Groq API error HTTP {resp.status_code}: {resp.text}")
+    except Exception as e:
+        logger.warning(f"Groq execution failed: {e}")
+
+    return "", 0
 
 
 async def _invoke_ollama(prompt: str, fast: bool = False) -> Tuple[str, int]:
-    """Call local Ollama / Qwen2.5 as fallback."""
+    """Call local Ollama / Qwen2.5 as final fallback."""
     try:
         from langchain_ollama import ChatOllama
         model = ChatOllama(
@@ -107,6 +136,7 @@ async def _invoke_ollama(prompt: str, fast: bool = False) -> Tuple[str, int]:
         tokens = len(text.split()) * 4 // 3
         return text, tokens
     except Exception as e:
+        logger.warning(f"Ollama execution failed: {e}")
         return f"[LLM unavailable: {str(e)}]", 0
 
 
@@ -125,7 +155,3 @@ def extract_json_from_response(text: str) -> Dict[str, Any]:
         except json.JSONDecodeError:
             pass
     return {}
-
-
-llm = None
-llm_fast = None

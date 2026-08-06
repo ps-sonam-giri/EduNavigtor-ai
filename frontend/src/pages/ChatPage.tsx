@@ -1,3 +1,4 @@
+import AgentTrajectory from '@/components/AgentTrajectory'
 import { useState, useRef, useEffect } from 'react'
 import { useQuery, useQueryClient } from '@tanstack/react-query'
 import { agentApi } from '@/lib/api'
@@ -348,14 +349,8 @@ export default function ChatPage() {
                   ? <MessageContent content={msg.content} />
                   : <p className="text-sm">{msg.content}</p>}
 
-                {msg.agents_used && msg.agents_used.length > 0 && (
-                  <div className="flex flex-wrap gap-1 mt-2">
-                    {msg.agents_used.map(a => (
-                      <span key={a} className="badge badge-purple text-xs">
-                        {a.replace('_agent', '').replace('_', ' ')}
-                      </span>
-                    ))}
-                  </div>
+                {msg.role === 'assistant' && (
+                  <AgentTrajectory agentsExecuted={msg.agents_used} />
                 )}
 
                 <p className={clsx(

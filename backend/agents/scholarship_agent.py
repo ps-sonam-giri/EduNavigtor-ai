@@ -79,15 +79,31 @@ async def scholarship_agent(state: AgentState) -> AgentState:
     course = profile.get("course_interest", "Not specified")
     work_exp = profile.get("work_experience_years", 0)
 
+    # Perform Tavily Live Web Search for scholarships
+    tavily_context = ""
+    try:
+        from tools.tavily_tools import search_tavily_web
+        search_query = f"scholarships for Indian students studying {course} in {', '.join(preferred) if preferred else 'USA UK Germany Canada'} 2025 2026 application deadline"
+        tavily_res = await search_tavily_web(query=search_query, max_results=5)
+        if tavily_res.get("status") == "success":
+            snippets = []
+            if tavily_res.get("answer"):
+                snippets.append(f"Summary: {tavily_res['answer']}")
+            for r in tavily_res.get("results", []):
+                snippets.append(f"- [{r.get('title')}]({r.get('url')}): {r.get('content')[:250]}")
+            tavily_context = "\nLive Web Search Results (Tavily):\n" + "\n".join(snippets)
+    except Exception:
+        tavily_context = ""
+
     prompt = SCHOLARSHIP_SEARCH_PROMPT.format(
         cgpa=cgpa, backlogs=backlogs, ielts=ielts,
         budget_usd=budget, course_interest=course,
         preferred_countries=json.dumps(preferred),
-        work_exp=work_exp, user_query=user_query,
+        work_exp=work_exp, user_query=user_query + tavily_context,
         db_scholarships=json.dumps(db_scholarships[:5], indent=2),
     )
 
-    # Use Google Search for current scholarship data
+    # Use Google Search / Tavily for current scholarship data
     response_text, tokens = await ainvoke_llm(prompt, use_search=True)
     data = extract_json_from_response(response_text)
     matched: List[Dict[str, Any]] = data.get("matched_scholarships", [])

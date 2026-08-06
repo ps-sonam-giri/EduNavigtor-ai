@@ -1,6 +1,6 @@
 """
-LangGraph shared state definition.
-Every agent reads from and writes to this typed state dict.
+LangGraph shared state definition for EduPilot AI.
+Supports ReAct trajectory, observations, reflection critiques, and HITL flags.
 """
 
 from typing import Any, Dict, List, Optional, TypedDict
@@ -26,42 +26,45 @@ class StudentProfileData(TypedDict, total=False):
 
 
 class AgentState(TypedDict, total=False):
-    # ── Routing ───────────────────────────────────────────────
+    # ── Identifiers & Query ───────────────────────────────────
     user_query: str
     session_id: str
     user_id: str
     chat_history: List[Dict[str, str]]
 
-    # ── Orchestrator decisions ────────────────────────────────
-    agents_to_run: List[str]
+    # ── ReAct Trajectory & Execution ─────────────────────────
+    turn_count: int
+    max_turns: int
+    current_thought: str
+    pending_action: Optional[Dict[str, Any]]
+    observations: List[Dict[str, Any]]
     agents_executed: List[str]
     orchestrator_reasoning: str
 
-    # ── Student profile ───────────────────────────────────────
+    # ── Reflection & Verification ────────────────────────────
+    verifier_passed: bool
+    verifier_critique: Optional[str]
+
+    # ── Human-in-the-Loop Flags ──────────────────────────────
+    requires_approval: bool
+    approval_action: Optional[str]
+    approval_granted: Optional[bool]
+
+    # ── Student Profile & Data Store ──────────────────────────
     student_profile: StudentProfileData
     profile_summary: str
     profile_complete: bool
 
-    # ── Country & university recommendations ──────────────────
+    # ── Domain Agent Results ─────────────────────────────────
     recommended_countries: List[Dict[str, Any]]
     recommended_universities: List[Dict[str, Any]]
-    university_comparison: Dict[str, Any]
-
-    # ── Scholarships ──────────────────────────────────────────
     matched_scholarships: List[Dict[str, Any]]
-
-    # ── Finance ───────────────────────────────────────────────
     finance_breakdown: Dict[str, Any]
-
-    # ── Timeline ─────────────────────────────────────────────
     application_timeline: List[Dict[str, Any]]
 
-    # ── Final report ─────────────────────────────────────────
+    # ── Output & Reporting ───────────────────────────────────
     final_report: Dict[str, Any]
     report_id: Optional[str]
-
-    # ── Per-agent messages (each agent stores its own) ────────
-    agent_messages: Dict[str, str]   # {"scholarship_agent": "...", "university_agent": "..."}
-
-    # ── Final message (picked by run_orchestrator) ────────────
     message: str
+    total_tokens_used: int
+    errors: List[str]

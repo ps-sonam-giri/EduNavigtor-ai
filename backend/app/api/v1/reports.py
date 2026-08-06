@@ -170,12 +170,25 @@ async def _send_report_email(
     subject: str | None = None,
     message: str | None = None,
 ):
+    from datetime import datetime, timezone
     from mcp_tools.gmail_mcp import GmailMCPClient
+    from app.database import AsyncSessionLocal
+
     client = GmailMCPClient()
-    await client.send_report_email(
+    success = await client.send_report_email(
         report_id=report_id,
         recipient=recipient,
         user_name=user_name,
         subject=subject,
         message=message,
     )
+
+    if success:
+        async with AsyncSessionLocal() as db:
+            result = await db.execute(select(Report).where(Report.id == report_id))
+            report = result.scalar_one_or_none()
+            if report:
+                report.email_sent = True
+                report.email_sent_at = datetime.now(timezone.utc)
+                report.email_recipient = recipient
+                await db.commit()

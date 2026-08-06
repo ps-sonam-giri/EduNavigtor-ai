@@ -104,17 +104,33 @@ async def university_agent(state: AgentState) -> AgentState:
     requested_count = min(max(requested_count, 3), 15)  # clamp 3–15
     num_countries = min(requested_count, 5)  # at least spread across countries
 
+    # Perform Tavily Live Web Search for real-time university data
+    tavily_context = ""
+    try:
+        from tools.tavily_tools import search_tavily_web
+        search_query = f"top {course} universities in {', '.join(preferred) if preferred else 'USA UK Germany Canada Australia'} tuition fees QS rank 2025 2026"
+        tavily_res = await search_tavily_web(query=search_query, max_results=5)
+        if tavily_res.get("status") == "success":
+            snippets = []
+            if tavily_res.get("answer"):
+                snippets.append(f"Summary: {tavily_res['answer']}")
+            for r in tavily_res.get("results", []):
+                snippets.append(f"- [{r.get('title')}]({r.get('url')}): {r.get('content')[:250]}")
+            tavily_context = "\nLive Web Search Results (Tavily):\n" + "\n".join(snippets)
+    except Exception:
+        tavily_context = ""
+
     prompt = GLOBAL_RECOMMENDATION_PROMPT.format(
         cgpa=cgpa, backlogs=backlogs, ielts=ielts,
         budget_usd=budget, course_interest=course, career_goal=career,
         preferred_countries=json.dumps(preferred),
         db_universities=json.dumps(db_universities[:3], indent=2),
-        user_query=user_query,
+        user_query=user_query + tavily_context,
         num_universities=requested_count,
         num_countries=num_countries,
     )
 
-    # Use Google Search grounding for real-time university data
+    # Use Google Search grounding / Tavily for real-time university data
     response_text, tokens1 = await ainvoke_llm(prompt, use_search=True)
     data = extract_json_from_response(response_text)
     recommendations: List[Dict[str, Any]] = data.get("recommendations", [])

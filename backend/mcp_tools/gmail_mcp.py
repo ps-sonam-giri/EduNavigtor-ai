@@ -44,8 +44,11 @@ class GmailMCPClient:
             # Try MCP server first
             return await self._send_via_mcp(recipient, email_subject, email_body, report_id)
         except Exception as e:
-            logger.warning("Gmail MCP unavailable, trying direct API", error=str(e))
-            return await self._send_via_google_api(recipient, email_subject, email_body, report_id)
+            logger.warning("Gmail MCP unavailable, trying direct Google API / SMTP", error=str(e))
+            sent = await self._send_via_google_api(recipient, email_subject, email_body, report_id)
+            if sent:
+                return True
+            return await self._send_via_smtp(recipient, email_subject, email_body, report_id)
 
     async def send_university_recommendation(
         self,
@@ -155,6 +158,59 @@ class GmailMCPClient:
             return True
         except Exception as e:
             logger.error("Google API email send failed", error=str(e))
+            return False
+
+    async def _send_via_smtp(
+        self,
+        recipient: str,
+        subject: str,
+        body: str,
+        report_id: Optional[str] = None,
+    ) -> bool:
+        """Send email directly using SMTP server (e.g. Gmail SMTP)."""
+        import os
+        import smtplib
+        from email.mime.multipart import MIMEMultipart
+        from email.mime.text import MIMEText
+        from email.mime.application import MIMEApplication
+
+        smtp_server = settings.smtp_server or os.environ.get("SMTP_SERVER", "smtp.gmail.com")
+        smtp_port = int(settings.smtp_port or os.environ.get("SMTP_PORT", 587))
+        smtp_user = settings.smtp_username or os.environ.get("SMTP_USERNAME", "").strip()
+        smtp_pass = settings.smtp_password or os.environ.get("SMTP_PASSWORD", "").strip()
+        sender = settings.smtp_sender or smtp_user or "noreply@edupilot.ai"
+
+        if not smtp_user or not smtp_pass:
+            logger.warning(
+                "SMTP credentials not configured in backend/.env. "
+                "Please set SMTP_USERNAME and SMTP_PASSWORD to send emails directly."
+            )
+            return False
+
+        try:
+            msg = MIMEMultipart("alternative")
+            msg["From"] = f"EduPilot AI <{sender}>"
+            msg["To"] = recipient
+            msg["Subject"] = subject
+            msg.attach(MIMEText(body, "html"))
+
+            if report_id:
+                pdf_path = Path(settings.reports_dir) / f"report_{report_id}.pdf"
+                if pdf_path.exists():
+                    with open(pdf_path, "rb") as f:
+                        part = MIMEApplication(f.read(), Name=pdf_path.name)
+                        part["Content-Disposition"] = f'attachment; filename="{pdf_path.name}"'
+                        msg.attach(part)
+
+            with smtplib.SMTP(smtp_server, smtp_port) as server:
+                server.starttls()
+                server.login(smtp_user, smtp_pass)
+                server.send_message(msg)
+
+            logger.info("Email sent successfully via SMTP", recipient=recipient)
+            return True
+        except Exception as e:
+            logger.error("SMTP email send failed", error=str(e))
             return False
 
     def _build_report_email_body(self, user_name: str, report_id: str) -> str:

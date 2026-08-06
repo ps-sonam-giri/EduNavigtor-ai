@@ -89,19 +89,25 @@ async def generate_report_pdf(report_id: str, user_name: str, content: Dict[str,
         story.append(HRFlowable(width="100%", thickness=2, color=brand_color, spaceAfter=20))
 
         # ── Executive Summary ────────────────────────────────────────────────
-        if content.get("report_agent", {}).get("executive_summary"):
+        exec_summary = (
+            content.get("final_report", {}).get("executive_summary")
+            or content.get("report_agent", {}).get("executive_summary")
+        )
+        if exec_summary:
             story.append(Paragraph("Executive Summary", heading_style))
             story.append(Paragraph(
-                content["report_agent"]["executive_summary"].replace("\n", "<br/>"),
+                exec_summary.replace("\n", "<br/>"),
                 body_style,
             ))
             story.append(Spacer(1, 0.5 * cm))
 
         # ── Student Profile ───────────────────────────────────────────────────
-        profile = content.get("profile_agent", {})
-        if profile:
+        profile_data = (
+            content.get("student_profile")
+            or content.get("profile_agent", {}).get("student_profile", {})
+        )
+        if profile_data:
             story.append(Paragraph("Student Profile", heading_style))
-            profile_data = profile.get("student_profile", {})
             profile_rows = [
                 ["Field", "Value"],
                 ["CGPA", f"{profile_data.get('cgpa', 'N/A')} / {profile_data.get('cgpa_scale', 10)}"],
@@ -127,8 +133,10 @@ async def generate_report_pdf(report_id: str, user_name: str, content: Dict[str,
             story.append(Spacer(1, 0.5 * cm))
 
         # ── University Recommendations ────────────────────────────────────────
-        uni_data = content.get("university_agent", {})
-        universities = uni_data.get("recommended_universities", [])
+        universities = (
+            content.get("recommended_universities")
+            or content.get("university_agent", {}).get("recommended_universities", [])
+        )
         if universities:
             story.append(PageBreak())
             story.append(Paragraph("University Recommendations", heading_style))
@@ -144,15 +152,17 @@ async def generate_report_pdf(report_id: str, user_name: str, content: Dict[str,
                 story.append(Paragraph(
                     f"QS Rank: {uni.get('qs_world_rank', 'N/A')} | "
                     f"Tuition: USD {uni.get('avg_tuition_usd_per_year', 'N/A'):,}/yr | "
-                    f"Category: {uni.get('category', 'N/A').upper()}",
+                    f"Category: {str(uni.get('category', 'N/A')).upper()}",
                     label_style,
                 ) if isinstance(uni.get("avg_tuition_usd_per_year"), (int, float)) else
                 Paragraph(f"QS Rank: {uni.get('qs_world_rank', 'N/A')}", label_style))
                 story.append(Spacer(1, 0.3 * cm))
 
         # ── Scholarships ──────────────────────────────────────────────────────
-        sch_data = content.get("scholarship_agent", {})
-        scholarships = sch_data.get("matched_scholarships", [])
+        scholarships = (
+            content.get("matched_scholarships")
+            or content.get("scholarship_agent", {}).get("matched_scholarships", [])
+        )
         if scholarships:
             story.append(Paragraph("Matched Scholarships", heading_style))
             for s in scholarships[:5]:
@@ -166,8 +176,8 @@ async def generate_report_pdf(report_id: str, user_name: str, content: Dict[str,
             story.append(Spacer(1, 0.5 * cm))
 
         # ── Finance Breakdown ─────────────────────────────────────────────────
-        fin_data = content.get("finance_agent", {})
-        breakdowns = fin_data.get("finance_breakdown", {}).get("breakdowns", [])
+        fin_breakdown = content.get("finance_breakdown") or content.get("finance_agent", {}).get("finance_breakdown", {})
+        breakdowns = fin_breakdown.get("breakdowns", []) if isinstance(fin_breakdown, dict) else []
         if breakdowns:
             story.append(PageBreak())
             story.append(Paragraph("Financial Breakdown", heading_style))
@@ -193,27 +203,38 @@ async def generate_report_pdf(report_id: str, user_name: str, content: Dict[str,
             story.append(ft)
 
         # ── Timeline ─────────────────────────────────────────────────────────
-        tl_data = content.get("timeline_agent", {})
-        timeline = tl_data.get("application_timeline", [])
+        timeline = (
+            content.get("application_timeline")
+            or content.get("timeline_agent", {}).get("application_timeline", [])
+        )
         if timeline:
             story.append(PageBreak())
             story.append(Paragraph("Application Timeline", heading_style))
             for item in timeline:
+                month_offset = item.get("month_offset", 0)
+                default_month_label = f"Month {month_offset + 1}"
+                month_label = item.get("month_label", default_month_label)
+                priority_str = str(item.get("priority", "")).upper()
                 story.append(Paragraph(
-                    f"<b>{item.get('month_label', f'Month {item.get(\"month_offset\", 0) + 1}')}</b> – "
-                    f"{item.get('milestone', 'N/A')} "
-                    f"[<font color='#667eea'>{item.get('priority', '').upper()}</font>]",
+                    f"<b>{month_label}</b> – {item.get('milestone', 'N/A')} "
+                    f"[<font color='#667eea'>{priority_str}</font>]",
                     body_style,
                 ))
                 story.append(Paragraph(item.get("description", ""), label_style))
                 story.append(Spacer(1, 0.2 * cm))
 
         # ── Final Recommendation ──────────────────────────────────────────────
-        if content.get("report_agent", {}).get("final_recommendation"):
+        final_rec = (
+            content.get("final_recommendation")
+            or content.get("final_report", {}).get("final_recommendation")
+            or content.get("final_report", {}).get("executive_summary")
+            or content.get("report_agent", {}).get("final_recommendation")
+        )
+        if final_rec:
             story.append(PageBreak())
             story.append(Paragraph("Final Recommendation", heading_style))
             story.append(Paragraph(
-                content["report_agent"]["final_recommendation"].replace("\n", "<br/>"),
+                final_rec.replace("\n", "<br/>"),
                 body_style,
             ))
 
