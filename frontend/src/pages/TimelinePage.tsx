@@ -1,7 +1,7 @@
 import { useState, useMemo } from 'react'
 import { useMutation } from '@tanstack/react-query'
 import { agentApi } from '@/lib/api'
-import { Calendar, CheckCircle, AlertCircle, Clock, Loader2, Zap, Sparkles, Filter, CheckCircle2, Flag, FileText, Landmark, Plane } from 'lucide-react'
+import { Calendar, CheckCircle, AlertCircle, Clock, Loader2, Zap, Sparkles, Filter, CheckCircle2, Flag, FileText, Landmark, Plane, BookOpen, ExternalLink, GraduationCap, Award, Download } from 'lucide-react'
 import { motion } from 'framer-motion'
 import toast from 'react-hot-toast'
 import clsx from 'clsx'
@@ -27,6 +27,88 @@ const INTAKES = [
 
 const COUNTRIES = ['Germany', 'USA', 'UK', 'Canada', 'Australia', 'Ireland']
 const DEGREES = ["Master's / MSc", "Bachelor's / BSc", 'MBA', 'PhD / Doctorate']
+
+const EXAM_STUDY_MATERIALS = [
+  {
+    id: 'ielts',
+    name: 'IELTS Academic',
+    targetScore: 'Band 7.0 – 8.5',
+    description: 'Essential for UK, Australia, Canada, Germany & European Master’s admissions.',
+    icon: '🇬🇧',
+    sections: [
+      { name: 'Listening (40 mins)', tips: 'Practice Cambridge IELTS 14–19 audio tests. Focus on spelling & number dictation.' },
+      { name: 'Reading (60 mins)', tips: 'Skim academic articles (The Economist, Scientific American). Practice True/False/Not Given questions.' },
+      { name: 'Writing (60 mins)', tips: 'Task 1: Describe graphs/charts using trends vocabulary. Task 2: Band 9 4-paragraph essay template.' },
+      { name: 'Speaking (11-14 mins)', tips: 'Practice 2025/2026 cue cards. Record your audio responses for fluency & coherence.' }
+    ],
+    officialResources: [
+      { title: 'British Council Free Practice Tests', url: 'https://takeielts.britishcouncil.org/take-ielts/prepare/free-ielts-practice-tests' },
+      { title: 'IDP Official IELTS Sample Questions', url: 'https://www.ieltsidpindia.com/prepare/free-study-material' },
+      { title: 'Cambridge IELTS Practice Exam Guide', url: 'https://www.cambridgeenglish.org/exams-and-tests/ielts/' }
+    ]
+  },
+  {
+    id: 'gre',
+    name: 'GRE General Test',
+    targetScore: '315 – 330+',
+    description: 'Key requirement for US CS/STEM Master’s and competitive global engineering programs.',
+    icon: '📊',
+    sections: [
+      { name: 'Quantitative Reasoning (170)', tips: 'Master Manhattan Prep 5 lb Book. Focus on Algebra, Geometry & Data Interpretation.' },
+      { name: 'Verbal Reasoning (170)', tips: 'Learn 1,000 High-Frequency GRE Magoosh Flashcards. Master Text Completion context clues.' },
+      { name: 'Analytical Writing (4.0+)', tips: 'Practice Issue Essay argument structure. Focus on logic, clear examples, and transitional phrases.' }
+    ],
+    officialResources: [
+      { title: 'ETS GRE POWERPREP Official Free Practice', url: 'https://www.ets.org/gre/test-takers/general-test/prepare/powerprep.html' },
+      { title: 'Manhattan Prep Free GRE Practice Exam', url: 'https://www.manhattanprep.com/gre/resources/' },
+      { title: 'ETS Official GRE Math Review Guide', url: 'https://www.ets.org/gre/test-takers/general-test/prepare/math-review.html' }
+    ]
+  },
+  {
+    id: 'toefl',
+    name: 'TOEFL iBT',
+    targetScore: '95 – 110+',
+    description: 'Widely accepted across North America, Europe, and global research universities.',
+    icon: '🇺🇸',
+    sections: [
+      { name: 'Reading & Listening', tips: 'Practice ETS TOEFL iBT Free Practice Test. Build stamina for 2-hour online format.' },
+      { name: 'Speaking & Writing', tips: 'Master New Academic Discussion writing task. Practice 45-second timed speaking prompts.' }
+    ],
+    officialResources: [
+      { title: 'ETS TOEFL iBT Official Test Prep', url: 'https://www.ets.org/toefl/test-takers/ibt/prepare/tests.html' },
+      { title: 'TOEFL Practice Online GoToPrep', url: 'https://www.toeflgo.org' }
+    ]
+  },
+  {
+    id: 'gmat',
+    name: 'GMAT Focus Edition',
+    targetScore: '645 – 715+',
+    description: 'Required for top global MBA and specialized Master in Management (MiM) programs.',
+    icon: '💼',
+    sections: [
+      { name: 'Data Insights (DI)', tips: 'Practice Data Sufficiency & Multi-Source Reasoning in GMAT Official Guide.' },
+      { name: 'Quantitative & Verbal', tips: 'Master Critical Reasoning logic trees and speed problem-solving.' }
+    ],
+    officialResources: [
+      { title: 'mba.com Official GMAT Focus Starter Kit', url: 'https://www.mba.com/exam-prep/gmat-official-starter-kit' },
+      { title: 'GMAT Club Free Diagnostic Practice Tests', url: 'https://gmatclub.com/tests-gmat-focus/' }
+    ]
+  },
+  {
+    id: 'german',
+    name: 'Goethe German (A1–B2)',
+    targetScore: 'A2 / B1 / B2 Certificate',
+    description: 'Essential for English/German taught public university degrees and student visa in Germany.',
+    icon: '🇩🇪',
+    sections: [
+      { name: 'Goethe A1-B2 Vocabulary', tips: 'Complete Deutsche Welle Nicos Weg course. Practice Goethe Institut Model Papers.' }
+    ],
+    officialResources: [
+      { title: 'Goethe-Institut Free Exam Practice', url: 'https://www.goethe.de/en/spr/kup/prf/prf.html' },
+      { title: 'Deutsche Welle Free Learn German Course', url: 'https://learngerman.dw.com/en/overview' }
+    ]
+  }
+]
 
 /** Calculate dynamic month-by-month calendar labels based on target intake */
 function getIntakeTimeline(
@@ -166,6 +248,9 @@ export default function TimelinePage() {
   const [hasIELTS, setHasIELTS] = useState(false)
   const [hasGRE, setHasGRE] = useState(false)
   const [hasSOP, setHasSOP] = useState(false)
+
+  // Active Exam Tab state for Study Materials Hub
+  const [activeExamId, setActiveExamId] = useState('ielts')
 
   // Completed Milestones tracking
   const [completedIds, setCompletedIds] = useState<string[]>([])
@@ -339,6 +424,94 @@ export default function TimelinePage() {
         <p className="text-xs text-gray-400 mt-2">
           {completedIds.length} of {activeTimeline.length} milestones completed for {selectedDegree} ({selectedCountry} – {targetIntake})
         </p>
+      </div>
+
+      {/* Exam Preparation & Study Materials Hub */}
+      <div className="card space-y-4 border-brand-100 bg-gradient-to-br from-white via-brand-50/10 to-indigo-50/20">
+        <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-2 border-b border-gray-100 pb-3">
+          <div>
+            <h2 className="text-base font-bold text-gray-900 flex items-center gap-2">
+              <BookOpen className="w-5 h-5 text-brand-500" /> Exam Study Materials & Free Practice Tests
+            </h2>
+            <p className="text-xs text-gray-500">Official preparation guides, section tips, and free practice resources for your study abroad exams</p>
+          </div>
+          <span className="text-[11px] font-semibold px-2.5 py-1 rounded-full bg-brand-50 text-brand-600 border border-brand-200 self-start sm:self-auto">
+            100% Free Practice Portals
+          </span>
+        </div>
+
+        {/* Exam Selection Tabs */}
+        <div className="flex flex-wrap gap-2">
+          {EXAM_STUDY_MATERIALS.map((exam) => (
+            <button
+              key={exam.id}
+              onClick={() => setActiveExamId(exam.id)}
+              className={clsx(
+                'px-3.5 py-2 rounded-xl text-xs font-semibold transition-all flex items-center gap-2 border',
+                activeExamId === exam.id
+                  ? 'bg-brand-500 text-white border-brand-500 shadow-xs'
+                  : 'bg-white text-gray-700 hover:bg-gray-50 border-gray-200'
+              )}
+            >
+              <span>{exam.icon}</span>
+              <span>{exam.name}</span>
+            </button>
+          ))}
+        </div>
+
+        {/* Selected Exam Material View */}
+        {(() => {
+          const exam = EXAM_STUDY_MATERIALS.find((e) => e.id === activeExamId) || EXAM_STUDY_MATERIALS[0]
+          return (
+            <div className="space-y-4 pt-2">
+              <div className="p-3.5 bg-white rounded-xl border border-gray-100 flex flex-col sm:flex-row sm:items-center sm:justify-between gap-2">
+                <div>
+                  <h3 className="font-bold text-sm text-gray-900 flex items-center gap-2">
+                    <span>{exam.icon}</span> {exam.name} Preparation Hub
+                  </h3>
+                  <p className="text-xs text-gray-600 mt-0.5">{exam.description}</p>
+                </div>
+                <div className="px-3 py-1.5 rounded-lg bg-emerald-50 text-emerald-800 text-xs font-bold border border-emerald-200 shrink-0">
+                  Target: {exam.targetScore}
+                </div>
+              </div>
+
+              {/* Section Strategies */}
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
+                {exam.sections.map((sec, sIdx) => (
+                  <div key={sIdx} className="p-3 bg-white/80 rounded-xl border border-gray-100 space-y-1">
+                    <h4 className="font-semibold text-xs text-gray-900 flex items-center gap-1.5">
+                      <GraduationCap className="w-3.5 h-3.5 text-brand-500" /> {sec.name}
+                    </h4>
+                    <p className="text-xs text-gray-600 leading-relaxed">{sec.tips}</p>
+                  </div>
+                ))}
+              </div>
+
+              {/* Official Free Download Links */}
+              <div className="pt-2">
+                <h4 className="text-xs font-bold text-gray-800 mb-2 flex items-center gap-1.5">
+                  <Download className="w-3.5 h-3.5 text-brand-500" /> Official Free Practice Tests & Download Links
+                </h4>
+                <div className="flex flex-wrap gap-2">
+                  {exam.officialResources.map((res, rIdx) => (
+                    <a
+                      key={rIdx}
+                      href={res.url}
+                      target="_blank"
+                      rel="noreferrer"
+                      className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-white text-brand-600 hover:bg-brand-500 hover:text-white transition-all text-xs font-semibold border border-brand-200 shadow-2xs group"
+                    >
+                      <FileText className="w-3.5 h-3.5 text-brand-400 group-hover:text-white" />
+                      <span>{res.title}</span>
+                      <ExternalLink className="w-3 h-3 text-gray-400 group-hover:text-white" />
+                    </a>
+                  ))}
+                </div>
+              </div>
+            </div>
+          )
+        })()}
       </div>
 
       {/* Timeline Phases & Milestones */}
