@@ -66,7 +66,8 @@ def _send_email_smtp(
     smtp_server = settings.smtp_server or os.environ.get("SMTP_SERVER", "smtp.gmail.com")
     smtp_port = int(settings.smtp_port or os.environ.get("SMTP_PORT", 587))
     smtp_user = settings.smtp_username or os.environ.get("SMTP_USERNAME", "").strip()
-    smtp_pass = settings.smtp_password or os.environ.get("SMTP_PASSWORD", "").strip()
+    raw_pass = settings.smtp_password or os.environ.get("SMTP_PASSWORD", "").strip()
+    smtp_pass = raw_pass.replace(" ", "")
     sender = settings.smtp_sender or smtp_user or "edupilot.ai@gmail.com"
 
     if not smtp_user or not smtp_pass:
@@ -93,10 +94,61 @@ def _send_email_smtp(
                         part["Content-Disposition"] = f'attachment; filename="{path.name}"'
                         msg.attach(part)
 
-        with smtplib.SMTP(smtp_server, smtp_port) as server:
-            server.starttls()
-            server.login(smtp_user, smtp_pass)
-            server.send_message(msg)
+        # Try connection via SSL (port 465) first if port is 465 or if TLS 587 fails
+        connected = False
+        last_error = None
+
+        if smtp_port == 465:
+            try:
+                with smtplib.SMTP_SSL(smtp_server, 465, timeout=10) as server:
+                    server.login(smtp_user, smtp_pass)
+                    server.send_message(msg)
+                    connected = True
+            except Exception as e:
+                last_error = e
+
+        if not connected:
+            try:
+                with smtplib.SMTP(smtp_server, smtp_port, timeout=10) as server:
+                    server.starttls()
+                    server.login(smtp_user, smtp_pass)
+                    server.send_message(msg)
+                    connected = True
+            except Exception as e:
+                last_error = e
+
+        if not connected and smtp_port != 465:
+            # Fallback to SSL 465 if STARTTLS failed (e.g. port 587 blocked)
+            try:
+                with smtplib.SMTP_SSL(smtp_server, 465, timeout=10) as server:
+                    server.login(smtp_user, smtp_pass)
+                    server.send_message(msg)
+                    connected = True
+            except Exception as e:
+                last_error = e
+
+        if not connected:
+            from datetime import datetime
+            sent_dir = Path(settings.reports_dir) / "sent_emails"
+            sent_dir.mkdir(parents=True, exist_ok=True)
+            timestamp = datetime.now().strftime("%Y%m%d_%H%M%S")
+            email_file = sent_dir / f"email_{timestamp}_{to_email.replace('@', '_at_')}.html"
+            with open(email_file, "w", encoding="utf-8") as f:
+                f.write(f"<!-- To: {to_email} | Subject: {subject} -->\n{body}")
+
+            err_msg = str(last_error)
+            if "535" in err_msg or "BadCredentials" in err_msg:
+                return {
+                    "status": "warning",
+                    "message": f"Gmail Auth Failed (535 Bad Credentials). Email saved to local dev inbox: {email_file.name}. Generate a 16-char App Password at https://myaccount.google.com/apppasswords to enable live sending.",
+                    "local_file": str(email_file),
+                    "details": err_msg,
+                }
+            return {
+                "status": "warning",
+                "message": f"SMTP Dispatch Failed ({err_msg}). Saved to local dev inbox: {email_file.name}",
+                "local_file": str(email_file),
+            }
 
         return {
             "status": "success",

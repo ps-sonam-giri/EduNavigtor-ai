@@ -35,13 +35,24 @@ function MessageContent({ content }: { content: string }) {
   while (i < lines.length) {
     const line = lines[i]
 
-    // Markdown table detection
-    if (line.startsWith('|') && lines[i + 1]?.match(/^\|[-| ]+\|$/)) {
-      const headers = line.split('|').filter(Boolean).map(h => h.trim())
+    const currentLine = line.trim()
+    const nextLine = lines[i + 1]?.trim() || ''
+
+    // Markdown table detection (handles colons :---, spaces, and leading/trailing pipes)
+    if (currentLine.startsWith('|') && nextLine.match(/^\|?[\s\-:|]+\|?$/) && nextLine.includes('-')) {
+      const parseRow = (str: string) => {
+        const parts = str.split('|')
+        if (parts.length > 2 && parts[0] === '' && parts[parts.length - 1] === '') {
+          return parts.slice(1, -1).map(c => c.trim())
+        }
+        return parts.map(c => c.trim()).filter(Boolean)
+      }
+
+      const headers = parseRow(currentLine)
       i += 2 // skip header and separator
       const rows: string[][] = []
-      while (i < lines.length && lines[i].startsWith('|')) {
-        rows.push(lines[i].split('|').filter(Boolean).map(c => c.trim()))
+      while (i < lines.length && lines[i].trim().startsWith('|')) {
+        rows.push(parseRow(lines[i].trim()))
         i++
       }
       elements.push(
@@ -59,16 +70,16 @@ function MessageContent({ content }: { content: string }) {
               {rows.map((row, ri) => (
                 <tr key={ri} className={clsx('transition-colors', ri % 2 === 0 ? 'bg-white hover:bg-brand-50/30' : 'bg-slate-50/50 hover:bg-brand-50/40')}>
                   {row.map((cell, ci) => {
-                    // Format status pills
+                    // Format status pills & markdown elements
                     let cellFormatted = cell
-                      .replace(/🟢\s*(High|Safe|High Match)/g, '<span class="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[11px] font-semibold bg-emerald-50 text-emerald-700 border border-emerald-200">🟢 $1</span>')
-                      .replace(/🟡\s*(Medium|Target|Medium Match)/g, '<span class="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[11px] font-semibold bg-amber-50 text-amber-700 border border-amber-200">🟡 $1</span>')
-                      .replace(/🔴\s*(Low|Reach|Low Match)/g, '<span class="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[11px] font-semibold bg-rose-50 text-rose-700 border border-rose-200">🔴 $1</span>')
+                      .replace(/🟢\s*([^<|]+)/g, '<span class="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-[11px] font-semibold bg-emerald-50 text-emerald-700 border border-emerald-200 shadow-2xs">🟢 $1</span>')
+                      .replace(/🟡\s*([^<|]+)/g, '<span class="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-[11px] font-semibold bg-amber-50 text-amber-700 border border-amber-200 shadow-2xs">🟡 $1</span>')
+                      .replace(/🔴\s*([^<|]+)/g, '<span class="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-[11px] font-semibold bg-rose-50 text-rose-700 border border-rose-200 shadow-2xs">🔴 $1</span>')
                       .replace(/\*\*(.+?)\*\*/g, '<strong class="font-semibold text-slate-900">$1</strong>')
                       .replace(/\[(.+?)\]\((https?:\/\/.+?)\)/g, '<a href="$2" target="_blank" rel="noreferrer" class="inline-flex items-center gap-1 px-2.5 py-1 rounded-lg bg-brand-50 text-brand-600 hover:bg-brand-600 hover:text-white transition-all text-[11px] font-semibold border border-brand-200/80 shadow-xs">$1 ↗</a>')
 
                     return (
-                      <td key={ci} className="px-4 py-2.5 text-slate-700 whitespace-nowrap text-xs"
+                      <td key={ci} className="px-4 py-2.5 text-slate-700 text-xs leading-relaxed"
                         dangerouslySetInnerHTML={{ __html: cellFormatted }} />
                     )
                   })}

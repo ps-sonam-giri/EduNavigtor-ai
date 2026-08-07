@@ -82,6 +82,8 @@ htmlcov/
 # ── Generated files ───────────────────────────────────────────
 reports/generated/*.pdf
 reports/generated/*.docx
+backend/reports/
+reports/sent_emails/
 
 # ── Uploads ──────────────────────────────────────────────────
 uploads/*

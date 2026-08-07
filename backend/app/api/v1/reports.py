@@ -201,3 +201,30 @@ async def send_report_email_endpoint(
             status_code=400,
             detail="Email delivery failed. Please configure SMTP_USERNAME and SMTP_PASSWORD (Gmail App Password) in backend/.env file."
         )
+
+
+@router.delete("/{report_id}", status_code=200)
+async def delete_report(
+    report_id: str,
+    db: AsyncSession = Depends(get_db),
+    current_user: User = Depends(get_current_active_user),
+):
+    """Delete a report record and its associated PDF file."""
+    result = await db.execute(
+        select(Report).where(Report.id == report_id, Report.user_id == current_user.id)
+    )
+    report = result.scalar_one_or_none()
+    if not report:
+        raise HTTPException(status_code=404, detail="Report not found")
+
+    # Remove PDF file from disk if it exists
+    if report.pdf_path and Path(report.pdf_path).exists():
+        try:
+            os.remove(report.pdf_path)
+        except Exception:
+            pass
+
+    await db.delete(report)
+    await db.commit()
+    return {"status": "deleted", "message": "Report deleted successfully"}
+

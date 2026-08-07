@@ -49,18 +49,18 @@ RULES FOR DECISION-MAKING:
 Respond ONLY with a valid JSON object matching ONE of these formats:
 
 Format A (Call a Tool):
-{
+{{
   "thought": "Reasoning about what tool to call next...",
   "action": "tool_name",
-  "action_input": { "arg1": "val1" }
-}
+  "action_input": {{ "arg1": "val1" }}
+}}
 
 Format B (Finish & Output Final Answer):
-{
+{{
   "thought": "Reasoning about why we have sufficient data...",
   "action": "finish",
   "final_answer": "Beautifully formatted executive answer with tables, structured bullet points, and actionable next steps."
-}
+}}
 """
 
 

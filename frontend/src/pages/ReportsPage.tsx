@@ -1,7 +1,7 @@
 import { useState } from 'react'
 import { useQuery, useQueryClient } from '@tanstack/react-query'
 import { reportApi } from '@/lib/api'
-import { FileText, Download, Mail, Loader2, Clock, Send, CheckCircle, HelpCircle, ShieldCheck, KeyRound } from 'lucide-react'
+import { FileText, Download, Mail, Loader2, Clock, Send, CheckCircle, HelpCircle, ShieldCheck, KeyRound, Trash2 } from 'lucide-react'
 import { motion } from 'framer-motion'
 import toast from 'react-hot-toast'
 
@@ -10,6 +10,7 @@ export default function ReportsPage() {
   const [emailInputs, setEmailInputs] = useState<Record<string, string>>({})
   const [sendingEmail, setSendingEmail] = useState<string | null>(null)
   const [downloadingId, setDownloadingId] = useState<string | null>(null)
+  const [deletingId, setDeletingId] = useState<string | null>(null)
   const [showEmailHelp, setShowEmailHelp] = useState(false)
 
   const { data: reports = [], isLoading, refetch } = useQuery({
@@ -17,6 +18,20 @@ export default function ReportsPage() {
     queryFn: () => reportApi.list().then(r => r.data),
     refetchInterval: 8000,
   })
+
+  const handleDeleteReport = async (id: string) => {
+    if (!confirm('Are you sure you want to delete this report?')) return
+    setDeletingId(id)
+    try {
+      await reportApi.delete(id)
+      toast.success('Report deleted successfully!')
+      qc.invalidateQueries({ queryKey: ['reports'] })
+    } catch {
+      toast.error('Failed to delete report')
+    } finally {
+      setDeletingId(null)
+    }
+  }
 
   const handleDownload = async (id: string, title: string) => {
     setDownloadingId(id)
@@ -179,6 +194,19 @@ export default function ReportsPage() {
                     ? <Loader2 className="w-4 h-4 animate-spin" />
                     : <Download className="w-4 h-4 text-brand-600" />}
                   {report.pdf_path ? 'Download PDF Report' : 'PDF Generating...'}
+                </button>
+
+                {/* Delete Report Button */}
+                <button
+                  onClick={() => handleDeleteReport(report.id)}
+                  disabled={deletingId === report.id}
+                  className="p-2 rounded-xl text-red-500 hover:text-red-700 hover:bg-red-50 border border-red-200 transition-colors flex items-center gap-1.5 text-xs font-medium"
+                  title="Delete Report"
+                >
+                  {deletingId === report.id
+                    ? <Loader2 className="w-4 h-4 animate-spin" />
+                    : <Trash2 className="w-4 h-4 text-red-500" />}
+                  <span className="hidden sm:inline">Delete</span>
                 </button>
 
                 {/* Send Email Input & Button */}

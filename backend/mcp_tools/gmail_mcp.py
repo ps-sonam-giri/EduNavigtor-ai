@@ -107,11 +107,19 @@ class GmailMCPClient:
                     json=payload,
                 )
                 response.raise_for_status()
+                res_data = response.json()
+                if isinstance(res_data, dict):
+                    if res_data.get("status") == "error":
+                        logger.error("MCP email send error", error=res_data.get("message"))
+                        return False
+                    elif res_data.get("status") == "warning":
+                        logger.warning("MCP email delivery warning (saved locally)", msg=res_data.get("message"))
+                        return False
                 logger.info("Email sent via MCP", recipient=recipient, subject=subject)
                 return True
         except Exception as e:
             logger.error("MCP email send failed", error=str(e))
-            raise
+            return False
 
     async def _send_via_google_api(
         self,
@@ -177,7 +185,8 @@ class GmailMCPClient:
         smtp_server = settings.smtp_server or os.environ.get("SMTP_SERVER", "smtp.gmail.com")
         smtp_port = int(settings.smtp_port or os.environ.get("SMTP_PORT", 587))
         smtp_user = settings.smtp_username or os.environ.get("SMTP_USERNAME", "").strip()
-        smtp_pass = settings.smtp_password or os.environ.get("SMTP_PASSWORD", "").strip()
+        raw_pass = settings.smtp_password or os.environ.get("SMTP_PASSWORD", "").strip()
+        smtp_pass = raw_pass.replace(" ", "")
         sender = settings.smtp_sender or smtp_user or "noreply@edupilot.ai"
 
         if not smtp_user or not smtp_pass:
@@ -202,10 +211,40 @@ class GmailMCPClient:
                         part["Content-Disposition"] = f'attachment; filename="{pdf_path.name}"'
                         msg.attach(part)
 
-            with smtplib.SMTP(smtp_server, smtp_port) as server:
-                server.starttls()
-                server.login(smtp_user, smtp_pass)
-                server.send_message(msg)
+            connected = False
+            last_error = None
+
+            if smtp_port == 465:
+                try:
+                    with smtplib.SMTP_SSL(smtp_server, 465, timeout=10) as server:
+                        server.login(smtp_user, smtp_pass)
+                        server.send_message(msg)
+                        connected = True
+                except Exception as e:
+                    last_error = e
+
+            if not connected:
+                try:
+                    with smtplib.SMTP(smtp_server, smtp_port, timeout=10) as server:
+                        server.starttls()
+                        server.login(smtp_user, smtp_pass)
+                        server.send_message(msg)
+                        connected = True
+                except Exception as e:
+                    last_error = e
+
+            if not connected and smtp_port != 465:
+                try:
+                    with smtplib.SMTP_SSL(smtp_server, 465, timeout=10) as server:
+                        server.login(smtp_user, smtp_pass)
+                        server.send_message(msg)
+                        connected = True
+                except Exception as e:
+                    last_error = e
+
+            if not connected:
+                logger.error("SMTP email send failed", error=str(last_error))
+                return False
 
             logger.info("Email sent successfully via SMTP", recipient=recipient)
             return True
