@@ -132,11 +132,16 @@ export default function ProfilePage() {
 
   const handleDocUpload = async (docType: string, file: File) => {
     try {
-      await profileApi.uploadDocument(docType, file)
-      toast.success(`${docType} uploaded`)
+      const res: any = await profileApi.uploadDocument(docType, file)
+      const ver = res.data?.verification
+      if (ver?.message) {
+        toast.success(`[${docType.toUpperCase()}] ${ver.message}`)
+      } else {
+        toast.success(`${docType.toUpperCase()} uploaded & verified!`)
+      }
       qc.invalidateQueries({ queryKey: ['profile'] })
     } catch {
-      toast.error('Upload failed')
+      toast.error('Document upload failed')
     }
   }
 
@@ -365,31 +370,84 @@ export default function ProfilePage() {
 
         {/* Documents */}
         <motion.div initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.25 }} className="card">
-          <div className="flex items-center gap-3 mb-5">
-            <div className="w-9 h-9 rounded-xl gradient-bg flex items-center justify-center">
-              <Upload className="w-5 h-5 text-white" />
+          <div className="flex items-center justify-between mb-5">
+            <div className="flex items-center gap-3">
+              <div className="w-9 h-9 rounded-xl gradient-bg flex items-center justify-center">
+                <Upload className="w-5 h-5 text-white" />
+              </div>
+              <div>
+                <h2 className="font-semibold text-gray-900">Documents Verification & Extraction</h2>
+                <p className="text-xs text-gray-500">Upload Resume, Marksheet, IELTS Scorecard, or SOP for instant AI verification</p>
+              </div>
             </div>
-            <h2 className="font-semibold text-gray-900">Documents (Auto-Extract)</h2>
           </div>
           <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
-            {(['resume', 'marksheet', 'ielts', 'sop'] as const).map(type => (
-              <label key={type}
-                className="flex flex-col items-center gap-2 p-4 border-2 border-dashed border-gray-200 rounded-xl cursor-pointer hover:border-brand-500 hover:bg-brand-50 transition-all text-center">
-                <Upload className="w-5 h-5 text-gray-400" />
-                <span className="text-xs font-medium text-gray-600 capitalize">{type}</span>
-                <span className="text-xs text-gray-400">PDF / DOCX</span>
-                <input type="file" accept=".pdf,.docx,.doc" className="hidden"
-                  onChange={e => e.target.files?.[0] && handleDocUpload(type, e.target.files[0])} />
-              </label>
-            ))}
+            {(['resume', 'marksheet', 'ielts', 'sop'] as const).map(type => {
+              const docInfo = profile?.documents?.[type]
+              const isVerified = typeof docInfo === 'object' ? docInfo?.verified : Boolean(docInfo)
+              const msg = typeof docInfo === 'object' ? docInfo?.message : null
+              const insights = typeof docInfo === 'object' ? docInfo?.extracted_insights : null
+
+              return (
+                <label key={type}
+                  className={`flex flex-col items-center gap-2 p-4 border-2 border-dashed rounded-xl cursor-pointer transition-all text-center relative ${
+                    isVerified 
+                      ? 'border-emerald-300 bg-emerald-50/40 hover:bg-emerald-50' 
+                      : 'border-gray-200 hover:border-brand-500 hover:bg-brand-50'
+                  }`}>
+                  {isVerified ? (
+                    <CheckCircle className="w-5 h-5 text-emerald-600" />
+                  ) : (
+                    <Upload className="w-5 h-5 text-gray-400" />
+                  )}
+                  <div className="flex items-center gap-1">
+                    <span className="text-xs font-semibold text-gray-800 uppercase tracking-wide">{type}</span>
+                    {isVerified && (
+                      <span className="inline-block w-2 h-2 rounded-full bg-emerald-500" title="Verified" />
+                    )}
+                  </div>
+                  <span className="text-[11px] text-gray-400">PDF / DOCX</span>
+                  
+                  {isVerified && (
+                    <span className="text-[10px] font-semibold text-emerald-700 bg-emerald-100/80 px-2 py-0.5 rounded-full mt-1">
+                      ✓ Verified
+                    </span>
+                  )}
+
+                  {insights?.cgpa && (
+                    <span className="text-[10px] font-bold text-brand-700 bg-brand-50 px-2 py-0.5 rounded-full border border-brand-200">
+                      CGPA: {insights.cgpa}
+                    </span>
+                  )}
+                  {insights?.ielts_score && (
+                    <span className="text-[10px] font-bold text-violet-700 bg-violet-50 px-2 py-0.5 rounded-full border border-violet-200">
+                      IELTS: {insights.ielts_score}
+                    </span>
+                  )}
+
+                  <input type="file" accept=".pdf,.docx,.doc,.txt" className="hidden"
+                    onChange={e => e.target.files?.[0] && handleDocUpload(type, e.target.files[0])} />
+                </label>
+              )
+            })}
           </div>
+
           {profile?.documents && Object.keys(profile.documents).length > 0 && (
-            <div className="mt-4 flex flex-wrap gap-2">
-              {Object.entries(profile.documents).map(([k]) => (
-                <span key={k} className="badge badge-green flex items-center gap-1">
-                  <CheckCircle className="w-3 h-3" /> {k}
-                </span>
-              ))}
+            <div className="mt-4 p-3 bg-slate-50 rounded-xl border border-slate-200 space-y-1.5">
+              <span className="text-xs font-semibold text-slate-700 flex items-center gap-1.5 mb-1">
+                <CheckCircle className="w-4 h-4 text-emerald-600" /> Verified Documents Overview:
+              </span>
+              <div className="flex flex-wrap gap-2">
+                {Object.entries(profile.documents).map(([k, val]: [string, any]) => {
+                  const statusMsg = typeof val === 'object' ? val?.message : 'Verified'
+                  return (
+                    <div key={k} className="text-xs bg-white px-3 py-1.5 rounded-lg border border-slate-200 text-slate-700 flex items-center gap-2 shadow-2xs">
+                      <span className="font-semibold uppercase text-brand-600">{k}:</span>
+                      <span className="text-slate-600">{statusMsg}</span>
+                    </div>
+                  )
+                })}
+              </div>
             </div>
           )}
         </motion.div>

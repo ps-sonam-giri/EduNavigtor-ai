@@ -110,17 +110,43 @@ async def upload_document(
     with open(file_path, "wb") as f:
         f.write(content)
 
+    # Perform document verification and data extraction
+    from tools.document_tools import verify_document_content
+    verification = verify_document_content(doc_type, str(file_path))
+
     result = await db.execute(
         select(StudentProfile).where(StudentProfile.user_id == current_user.id)
     )
     profile = result.scalar_one_or_none()
     if profile:
         docs = dict(profile.documents)
-        docs[doc_type] = str(file_path)
+        docs[doc_type] = {
+            "path": str(file_path),
+            "verified": verification["is_verified"],
+            "status": verification["verification_status"],
+            "confidence": verification["confidence"],
+            "message": verification["message"],
+            "verified_items": verification["verified_items"],
+            "extracted_insights": verification["extracted_insights"],
+        }
         profile.documents = docs
+
+        # Auto-update profile with extracted insights (e.g. CGPA, IELTS) if not already set
+        insights = verification.get("extracted_insights", {})
+        if "cgpa" in insights and not profile.cgpa:
+            profile.cgpa = insights["cgpa"]
+        if "ielts_score" in insights and not profile.ielts_score:
+            profile.ielts_score = insights["ielts_score"]
+
         await db.commit()
 
-    return {"doc_type": doc_type, "filename": filename, "path": str(file_path), "size_bytes": len(content)}
+    return {
+        "doc_type": doc_type,
+        "filename": filename,
+        "path": str(file_path),
+        "size_bytes": len(content),
+        "verification": verification,
+    }
 
 
 @router.delete("", status_code=status.HTTP_200_OK)
