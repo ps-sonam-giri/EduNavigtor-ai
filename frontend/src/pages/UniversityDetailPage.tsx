@@ -84,7 +84,7 @@ export default function UniversityDetailPage() {
 
   const { data: uni, isLoading } = useQuery({
     queryKey: ['university', id],
-    queryFn: () => universityApi.get(id!).then((r) => r.data),
+    queryFn: () => universityApi.get(id!).then((r: any) => r.data),
   })
 
   if (isLoading)

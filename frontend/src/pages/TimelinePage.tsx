@@ -264,7 +264,7 @@ export default function TimelinePage() {
     mutationFn: () => agentApi.run({
       query: `Generate my personalised application timeline for ${selectedDegree} in ${selectedCountry} starting ${targetIntake}`
     }),
-    onSuccess: (res) => {
+    onSuccess: (res: any) => {
       const msg = res.data?.result?.message || 'AI Custom Timeline Generated!'
       toast.success(msg)
     },

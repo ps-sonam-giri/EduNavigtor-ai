@@ -63,7 +63,7 @@ export default function ProfilePage() {
 
   const { data: profile, isLoading } = useQuery({
     queryKey: ['profile'],
-    queryFn: () => profileApi.get().then(r => r.data),
+    queryFn: () => profileApi.get().then((r: any) => r.data),
     retry: false,
   })
 

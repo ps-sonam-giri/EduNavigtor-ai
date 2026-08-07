@@ -372,7 +372,7 @@ export default function ScholarshipsPage() {
   // Fetch DB scholarships as fallback/supplement
   const { data: dbScholarships = [] } = useQuery({
     queryKey: ['scholarships'],
-    queryFn: () => universityApi.scholarships({ limit: 50 }).then((r) => r.data),
+    queryFn: () => universityApi.scholarships({ limit: 50 }).then((r: any) => r.data),
   })
 
   // Filter static global scholarships

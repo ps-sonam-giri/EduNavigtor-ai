@@ -15,7 +15,7 @@ export default function ReportsPage() {
 
   const { data: reports = [], isLoading, refetch } = useQuery({
     queryKey: ['reports'],
-    queryFn: () => reportApi.list().then(r => r.data),
+    queryFn: () => reportApi.list().then((r: any) => r.data),
     refetchInterval: 8000,
   })
 

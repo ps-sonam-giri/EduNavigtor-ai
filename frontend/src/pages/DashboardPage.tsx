@@ -20,13 +20,13 @@ const cards = [
 export default function DashboardPage() {
   const { data: profile } = useQuery({
     queryKey: ['profile'],
-    queryFn: () => profileApi.get().then((r) => r.data),
+    queryFn: () => profileApi.get().then((r: any) => r.data),
     retry: false,
   })
 
   const { data: logs } = useQuery({
     queryKey: ['agent-logs'],
-    queryFn: () => agentApi.getLogs().then((r) => r.data),
+    queryFn: () => agentApi.getLogs().then((r: any) => r.data),
     retry: false,
   })
 

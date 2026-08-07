@@ -102,7 +102,7 @@ export default function UniversitiesPage() {
         country: selectedCountryTab !== 'All' ? selectedCountryTab : undefined,
         max_tuition: maxTuition || undefined,
         limit: 50,
-      }).then((r) => r.data),
+      }).then((r: any) => r.data),
   })
 
   const filtered = useMemo(() => {
