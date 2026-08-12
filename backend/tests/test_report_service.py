@@ -63,3 +63,26 @@ async def test_report_pdf_generation(tmp_path):
     assert pdf_path is not None
     assert os.path.exists(pdf_path)
     assert os.path.getsize(pdf_path) > 0
+
+
+@pytest.mark.asyncio
+async def test_report_pdf_generation_with_db_update_assertion():
+    from unittest.mock import AsyncMock
+    import uuid
+
+    report_id = str(uuid.uuid4())
+    user_name = "Test Student"
+    content = {"student_profile": {"cgpa": 8.5}}
+
+    mock_db = AsyncMock()
+    mock_db.execute = AsyncMock()
+    mock_db.commit = AsyncMock()
+
+    pdf_path = await generate_report_pdf(report_id, user_name, content, db=mock_db)
+
+    assert pdf_path is not None
+    assert os.path.exists(pdf_path)
+    # Assert DB update contract execution
+    assert mock_db.execute.called
+    assert mock_db.commit.called
+

@@ -32,7 +32,8 @@ async def search_universities_tool(
     """
     from tools.tavily_tools import search_tavily_web
 
-    query = f"top universities for {course_interest or 'Computer Science'} in {country or 'Germany USA UK Canada'} QS rank tuition fees 2025 2026"
+    target_country = country or "Germany"
+    query = f"top universities for {course_interest or 'Computer Science'} in {target_country} QS rank tuition fees 2025 2026"
     if max_tuition_usd:
         query += f" tuition under {max_tuition_usd} USD"
 
@@ -43,7 +44,7 @@ async def search_universities_tool(
         for r in res.get("results", []):
             results.append({
                 "name": r.get("title", "University Result"),
-                "country": country or "International",
+                "country": target_country,
                 "content_snippet": r.get("content", "")[:300],
                 "url": r.get("url"),
                 "source": "Tavily Live Web Engine",

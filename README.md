@@ -1,151 +1,193 @@
 # EduPilot AI – Multi-Agent Study Abroad Copilot
 
-A production-quality AI agent platform that helps Indian students plan their entire study abroad journey. Built with LangGraph, Gemini 3.5 / Qwen2.5, FastAPI, React, and PostgreSQL — **100% free and open-source, with MCP integrations**.
+**EduPilot AI** is an end-to-end, production-grade **Multi-Agent AI Platform & Copilot** engineered to guide Indian students through every step of their study abroad journey.
+
+Powered by **LangGraph stateful agent orchestration**, **custom Model Context Protocol (MCP) servers**, **PostgreSQL**, **FastAPI**, **React 18**, and **AI Document Extraction Engine**, EduPilot AI transforms study abroad planning from overwhelming research into an automated, transparent, and personalized experience.
 
 ---
 
-## Architecture Overview
+## 🏗️ Complete System Architecture
 
 ```
-Student
-  │
-  ▼
-React Frontend (Vite + TypeScript + Tailwind)
-  │
-  ▼
-FastAPI Backend (Python 3.12)
-  │  ├── JWT Auth
-  │  ├── REST API (v1)
-  │  └── Background Tasks
-  │
-  ▼
-LangGraph Orchestrator
-  │
-  ├── Profile Agent          → Extracts/validates student profile
-  ├── Country Rec Agent      → Scores & recommends countries
-  ├── University Agent       → Queries DB, ranks, explains
-  ├── Scholarship Agent      → Matches scholarships by eligibility
-  ├── Finance Agent          → Calculates full budget breakdown
-  ├── Timeline Agent         → Builds personalised roadmap
-  └── Report Agent           → Generates final report & PDF
-  │
-  ▼
-MCP Servers & Tools
-  ├── Gmail MCP Server (Port 8001)  → Dispatches PDF reports & emails via Gmail SMTP/API
-  ├── Core Tools MCP (Port 8003)    → Exposes university & scholarship DB tools
-  └── Filesystem MCP                 → Extract data from uploaded documents (PDF/SOP)
-  │
-  ▼
-PostgreSQL Database
-  └── Universities, Scholarships, Countries, Profiles, Reports, Logs
+                                ┌────────────────────────────────────────────────┐
+                                │    React 18 SPA (TypeScript + Tailwind CSS)    │
+                                │              http://localhost:3000             │
+                                └───────────────────────┬────────────────────────┘
+                                                        │ REST API / JSON
+                                                        ▼
+                                ┌────────────────────────────────────────────────┐
+                                │         FastAPI Async Backend (Python 3.12)    │
+                                │              http://localhost:8000             │
+                                └───────────────┬────────────────┬───────────────┘
+                                                │                │
+                       ┌────────────────────────┘                └────────────────────────┐
+                       ▼                                                                  ▼
+ ┌───────────────────────────────────────────┐                                      ┌───────────────────────────┐
+ │   LangGraph Multi-Agent Orchestrator      │                                      │    MCP Servers & Tools    │
+ │                                           │                                      │                           │
+ │  ├── 1. Profile Agent                     │                                      │ ├── Gmail MCP (Port 8001) │
+ │  ├── 2. Country Recommendation Agent      │                                      │ ├── Core Tools (Port 8003)│
+ │  ├── 3. University Agent                  │                                      │ └── Filesystem PDF MCP    │
+ │  ├── 4. Scholarship Agent                 │                                      │                           │
+ │  ├── 5. Finance & Budget Agent            │                                      └─────────────┬─────────────┘
+ │  ├── 6. Timeline Agent                    │                                                    │
+ │  └── 7. Report Agent                      │                                                    │
+ └─────────────┬─────────────────────────────┘                                                    │
+               │                                                                                  │
+               ▼                                                                                  ▼
+ ┌───────────────────────────┐                                                      ┌───────────────────────────┐
+ │  LLM Engine (Gemini 3.5 / │                                                      │    PostgreSQL Database    │
+ │      Ollama Qwen2.5)      │                                                      │   Profiles, Universities, │
+ └───────────────────────────┘                                                      │    Scholarships, Reports  │
+                                                                                    └───────────────────────────┘
 ```
 
 ---
 
-## LangGraph Agent Workflow
+## 🤖 The 7 Autonomous AI Agents (LangGraph Workflow)
 
 ```
-User Query
-    │
-    ▼
-[Orchestrator] ─── analyses query ──→ decides agents_to_run list
-    │
-    ▼
-[Profile Agent]     ← enriches/validates student profile
-    │
-    ▼
-[Country Rec]       ← scores countries by budget, goals, post-study work
-    │
-    ▼
-[University Agent]  ← queries PostgreSQL, ranks universities, explains why
-    │
-    ▼
-[Scholarship Agent] ← matches scholarships, explains eligibility gaps
-    │
-    ▼
-[Finance Agent]     ← full breakdown: tuition + living + visa + insurance
-    │
-    ▼
-[Timeline Agent]    ← month-by-month personalised application roadmap
-    │
-    ▼
-[Report Agent]      ← assembles final report, writes executive summary
-    │
-    ▼
-PDF Report  →  Gmail MCP (Port 8001)  →  Student's inbox
+                                    User Request / Profile Input
+                                                │
+                                                ▼
+                                   ┌───────────────────────────┐
+                                   │   LangGraph Orchestrator  │
+                                   └─────────────┬─────────────┘
+                                                 │
+      ┌──────────────────┬───────────────────────┼───────────────────────┬──────────────────┐
+      ▼                  ▼                       ▼                       ▼                  ▼
+┌───────────┐   ┌─────────────────┐    ┌──────────────────┐    ┌─────────────────┐   ┌────────────┐
+│  Profile  │   │  Country Rec    │    │  University      │    │  Scholarship    │   │  Finance   │
+│   Agent   │   │     Agent       │    │     Agent        │    │     Agent       │   │   Agent    │
+└─────┬─────┘   └────────┬────────┘    └────────┬─────────┘    └────────┬────────┘   └─────┬──────┘
+      │                  │                      │                       │                  │
+      └──────────────────┴──────────────────────┼───────────────────────┴──────────────────┘
+                                                │
+                                                ▼
+                                   ┌───────────────────────────┐
+                                   │      Timeline Agent       │
+                                   └─────────────┬─────────────┘
+                                                 │
+                                                 ▼
+                                   ┌───────────────────────────┐
+                                   │       Report Agent        │
+                                   └─────────────┬─────────────┘
+                                                 │
+                                                 ▼
+                                ┌─────────────────────────────────┐
+                                │ PDF Generation & Email Dispatch │
+                                │   (ReportLab & Gmail MCP 8001)  │
+                                └─────────────────────────────────┘
 ```
 
-**Dynamic Orchestration**: The orchestrator is NOT a fixed sequential pipeline. It reads user requests and dynamically routes to the appropriate agents. A query like *"What scholarships am I eligible for?"* only runs Profile + Scholarship agents, whereas full planning triggers all 7 agents.
+### Specialized Agents:
+1. **Profile Agent (`backend/agents/profile_agent.py`)**: Normalizes CGPA, test scores (IELTS/GRE), work experience, and target degree. Flaggers flag missing data before execution.
+2. **Country Recommendation Agent (`backend/agents/country_rec_agent.py`)**: Scores countries (USA, UK, Canada, Germany, Australia, Ireland, etc.) based on budget fit, post-study work visa duration (PSW), PR path feasibility, and academic eligibility.
+3. **University Agent (`backend/agents/university_agent.py`)**: Ranks target, moderate, and reach universities from PostgreSQL and Tavily Live Web Search while enforcing reasoning for every recommendation.
+4. **Scholarship Agent (`backend/agents/scholarship_agent.py`)**: Matches institutional and government scholarships while highlighting exact eligibility gaps.
+5. **Finance & Budget Agent (`backend/agents/finance_agent.py`)**: Calculates 1-year and 2-year cost breakdowns in USD ($) and INR (₹) covering tuition, living costs, visa fees, and insurance minus scholarships.
+6. **Timeline Agent (`backend/agents/timeline_agent.py`)**: Builds a month-by-month application roadmap tailored to Fall/Spring intake cycles.
+7. **Report Agent (`backend/agents/report_agent.py`)**: Renders comprehensive executive summary reports and compiles downloadable PDF reports via ReportLab.
 
 ---
 
-## Tech Stack
+## 🌐 Compare Universities Worldwide Engine
 
-| Layer          | Technology                     | Description                          |
-|----------------|--------------------------------|--------------------------------------|
-| Frontend       | React 18, Vite, TypeScript     | Fast, type-safe SPA                  |
-| UI Styling     | Tailwind CSS, Framer Motion    | Rapid, animated, accessible UI       |
-| State          | Zustand, React Query           | Lightweight state + data fetching    |
-| Backend        | FastAPI (Python 3.12)          | Async REST API & OpenAPI docs        |
-| Auth           | JWT (python-jose + passlib)    | Stateless secure authentication      |
-| ORM            | SQLAlchemy 2.0 (async)         | Type-safe async ORM                  |
-| Database       | PostgreSQL 16                  | Structured data with JSONB support   |
-| LLM            | Gemini 3.5 / Ollama Qwen2.5    | Multi-provider LLM support           |
-| Agents         | LangGraph 0.2                  | Stateful multi-agent orchestration   |
-| MCP            | Custom Gmail & Core Tools MCP  | Standalone MCP servers (8001 & 8003) |
-| PDF Reports    | ReportLab                      | Executive PDF generation             |
+The platform features an advanced **Global University Comparison Engine**:
+- **Dynamic Live Web Search Fallback**: Query any university in the world (e.g. Harvard, Oxford, TUM Munich, ETH Zurich, NUS Singapore, IIT Bombay). If not pre-seeded in database, the backend queries live web data to extract QS rank, tuition, acceptance rate, CGPA, IELTS score, and scholarships.
+- **Region & Country Filters**: Filter by 14+ world destinations (USA 🇺🇸, UK 🇬🇧, Canada 🇨🇦, Germany 🇩🇪, Australia 🇦🇺, Singapore 🇸🇬, Japan 🇯🇵, India 🇮🇳, Switzerland 🇨🇭, etc.).
+- **Side-by-Side Table**: Compare up to 4 universities simultaneously with automatic "Best Choice" highlight badges.
 
 ---
 
-## Service Endpoints
+## 📑 AI Document Extraction Engine
 
-| Service | Port | Local URL | Description |
+Located in `backend/tools/document_tools.py`, the engine processes uploaded PDFs (transcripts, test scorecards, resumes):
+- **Transcripts**: Auto-detects and extracts CGPA/GPA.
+- **IELTS Scorecards**: Auto-detects Listening, Reading, Writing, Speaking bands and TRF number.
+- **Resumes/CV**: Structural check of Education, Work Experience, Projects, and Skills.
+
+---
+
+## ⚡ Model Context Protocol (MCP) Integration
+
+EduPilot AI leverages two standalone MCP Servers:
+1. **Gmail MCP Server (`http://localhost:8001`)**: Handles direct email dispatch of PDF reports to user inboxes using SMTP with a local fallback queue (`backend/reports/sent_emails/`).
+2. **Core Tools MCP Server (`http://localhost:8003`)**: Exposes university search, scholarship lookup, and financial calculation tools over JSON-RPC.
+
+---
+
+## 🛠️ Tech Stack
+
+| Layer | Technology | Details |
+| :--- | :--- | :--- |
+| **Frontend** | React 18, Vite, TypeScript | Type-safe Single Page Application |
+| **Styling & UI** | Tailwind CSS, Framer Motion, Lucide Icons | Animated, responsive interface |
+| **State Management** | React Query, Zustand | Async state and query caching |
+| **Backend API** | FastAPI (Python 3.12) | High-performance async REST framework |
+| **Agent Framework** | LangGraph 0.2 | Stateful multi-agent graph DAG |
+| **LLM Provider** | Gemini 3.5 / Ollama Qwen2.5 | Multi-model LLM engine |
+| **Database** | PostgreSQL 18 | Relational database for unis & profiles |
+| **Protocol** | Model Context Protocol (MCP) | Modular microservice tool servers |
+| **PDF Generation** | ReportLab | Executive PDF generation |
+
+---
+
+## 🌐 Service Ports & Endpoints
+
+| Service | Port | Endpoint URL | Description |
 | :--- | :--- | :--- | :--- |
-| **Frontend App** | `3000` | [http://localhost:3000](http://localhost:3000) | React UI Application |
+| **Frontend Web App** | `3000` | [http://localhost:3000](http://localhost:3000) | React Frontend Application |
 | **Backend API** | `8000` | [http://localhost:8000](http://localhost:8000) | FastAPI Core Backend |
-| **API Docs** | `8000` | [http://localhost:8000/docs](http://localhost:8000/docs) | Interactive OpenAPI Docs |
-| **Gmail MCP Server** | `8001` | [http://localhost:8001](http://localhost:8001) | MCP Server for Gmail Dispatch |
-| **Core Tools MCP** | `8003` | [http://localhost:8003](http://localhost:8003) | MCP Server for Domain Tools |
+| **API Docs (Swagger)** | `8000` | [http://localhost:8000/docs](http://localhost:8000/docs) | Interactive OpenAPI Documentation |
+| **Gmail MCP Server** | `8001` | [http://localhost:8001](http://localhost:8001) | MCP Server for Email & Report Dispatch |
+| **Core Tools MCP Server**| `8003` | [http://localhost:8003](http://localhost:8003) | MCP Server for University/Scholarship Tools |
 
 ---
 
-## Quick Start (Without Docker)
+## 🚀 Quick Start Instructions
 
-Run the full application stack with a single command on PowerShell:
-
+### 1. One-Click Automated Start
+Launch all 4 services with a single PowerShell script:
 ```powershell
 powershell -ExecutionPolicy Bypass -File .\start.ps1
 ```
 
-This automatically launches:
-1. FastAPI Backend (`http://localhost:8000`)
-2. Gmail MCP Server (`http://localhost:8001`)
-3. React Frontend (`http://localhost:3000`)
+### 2. Manual Startup
 
----
+#### Step 1: Verify PostgreSQL
+Ensure PostgreSQL is running locally on port 5432 with database `edupilot_db`.
 
-## Email Configuration & MCP Setup
-
-### Gmail MCP Server (`backend/mcp_servers/gmail_mcp_server.py`)
-To send emails directly to user inboxes via Gmail SMTP, configure `backend/.env`:
-
-```env
-SMTP_SERVER=smtp.gmail.com
-SMTP_PORT=587
-SMTP_USERNAME=your-email@gmail.com
-SMTP_PASSWORD=your_16_character_app_password
-SMTP_SENDER=your-email@gmail.com
+#### Step 2: Seed Database
+```powershell
+cd backend
+.\venv\Scripts\python.exe ..\seed_universities.py
 ```
 
-> **Note**: Generate a 16-character App Password at [https://myaccount.google.com/apppasswords](https://myaccount.google.com/apppasswords) with 2-Step Verification enabled.
+#### Step 3: Run Backend API
+```powershell
+cd backend
+.\venv\Scripts\uvicorn.exe app.main:app --host 0.0.0.0 --port 8000 --reload
+```
 
-### Development Fallback Mode
-If SMTP credentials are not configured or rejected by Google, the system automatically routes emails to the local development inbox at:
-`backend/reports/sent_emails/`
+#### Step 4: Run MCP Servers
+```powershell
+# Gmail MCP (Port 8001)
+.\venv\Scripts\python.exe -m mcp_servers.gmail_mcp_server
+
+# Core Tools MCP (Port 8003)
+.\venv\Scripts\python.exe -m mcp_servers.core_tools_mcp_server
+```
+
+#### Step 5: Run Frontend
+```powershell
+cd frontend
+npm run dev
+```
 
 ---
 
-## License & Attribution
+## 📜 License
 
-Built with LangGraph + FastAPI + React + Model Context Protocol (MCP).
-Open-source under the MIT License.
+EduPilot AI is open-source software licensed under the **MIT License**.
+

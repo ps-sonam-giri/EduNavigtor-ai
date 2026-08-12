@@ -3,6 +3,7 @@ import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, Legend, Responsive
 import { Calculator, DollarSign, TrendingDown, Info, MapPin, Building2, GraduationCap, BookOpen, Sparkles, Globe, Loader2, ExternalLink } from 'lucide-react'
 import { universityApi } from '../lib/api'
 import { toast } from 'react-hot-toast'
+import { ALL_WORLD_COUNTRIES, TOP_POPULAR_COUNTRIES } from './ProfilePage'
 
 interface UniversityOption {
   name: string
@@ -22,16 +23,16 @@ const PRESET_UNIVERSITIES: UniversityOption[] = [
   { name: 'RWTH Aachen University', location: 'Aachen, Germany', country: 'Germany', tuition: 600, livingMonthly: 850, visa: 75, insurance: 110, defaultCourse: 'MSc Mechanical Engineering' },
 
   // USA
-  { name: 'Harvard University', location: 'Cambridge, MA, USA', country: 'USA', tuition: 54000, livingMonthly: 1900, visa: 185, insurance: 1400, defaultCourse: 'MSc Computer Science' },
-  { name: 'Massachusetts Institute of Technology (MIT)', location: 'Cambridge, MA, USA', country: 'USA', tuition: 57500, livingMonthly: 2000, visa: 185, insurance: 1500, defaultCourse: 'MSc Artificial Intelligence' },
-  { name: 'Stanford University', location: 'Stanford, CA, USA', country: 'USA', tuition: 56000, livingMonthly: 2100, visa: 185, insurance: 1450, defaultCourse: 'MSc Data Science & AI' },
-  { name: 'New York University (NYU)', location: 'New York, NY, USA', country: 'USA', tuition: 48000, livingMonthly: 2300, visa: 185, insurance: 1350, defaultCourse: 'MSc Information Technology' },
+  { name: 'Harvard University', location: 'Cambridge, MA, USA', country: 'United States', tuition: 54000, livingMonthly: 1900, visa: 185, insurance: 1400, defaultCourse: 'MSc Computer Science' },
+  { name: 'Massachusetts Institute of Technology (MIT)', location: 'Cambridge, MA, USA', country: 'United States', tuition: 57500, livingMonthly: 2000, visa: 185, insurance: 1500, defaultCourse: 'MSc Artificial Intelligence' },
+  { name: 'Stanford University', location: 'Stanford, CA, USA', country: 'United States', tuition: 56000, livingMonthly: 2100, visa: 185, insurance: 1450, defaultCourse: 'MSc Data Science & AI' },
+  { name: 'New York University (NYU)', location: 'New York, NY, USA', country: 'United States', tuition: 48000, livingMonthly: 2300, visa: 185, insurance: 1350, defaultCourse: 'MSc Information Technology' },
 
   // UK
-  { name: 'University of Oxford', location: 'Oxford, UK', country: 'UK', tuition: 36000, livingMonthly: 1400, visa: 490, insurance: 500, defaultCourse: 'MSc Computer Science' },
-  { name: 'University of Cambridge', location: 'Cambridge, UK', country: 'UK', tuition: 38000, livingMonthly: 1350, visa: 490, insurance: 500, defaultCourse: 'MSc Artificial Intelligence' },
-  { name: 'Imperial College London', location: 'London, UK', country: 'UK', tuition: 41000, livingMonthly: 1750, visa: 490, insurance: 550, defaultCourse: 'MSc Computer Science' },
-  { name: 'University College London (UCL)', location: 'London, UK', country: 'UK', tuition: 34000, livingMonthly: 1700, visa: 490, insurance: 520, defaultCourse: 'MSc Data Science & AI' },
+  { name: 'University of Oxford', location: 'Oxford, UK', country: 'United Kingdom', tuition: 36000, livingMonthly: 1400, visa: 490, insurance: 500, defaultCourse: 'MSc Computer Science' },
+  { name: 'University of Cambridge', location: 'Cambridge, UK', country: 'United Kingdom', tuition: 38000, livingMonthly: 1350, visa: 490, insurance: 500, defaultCourse: 'MSc Artificial Intelligence' },
+  { name: 'Imperial College London', location: 'London, UK', country: 'United Kingdom', tuition: 41000, livingMonthly: 1750, visa: 490, insurance: 550, defaultCourse: 'MSc Computer Science' },
+  { name: 'University College London (UCL)', location: 'London, UK', country: 'United Kingdom', tuition: 34000, livingMonthly: 1700, visa: 490, insurance: 520, defaultCourse: 'MSc Data Science & AI' },
 
   // Canada
   { name: 'University of Toronto', location: 'Toronto, ON, Canada', country: 'Canada', tuition: 31000, livingMonthly: 1500, visa: 150, insurance: 650, defaultCourse: 'MSc Computer Science' },
@@ -46,6 +47,69 @@ const PRESET_UNIVERSITIES: UniversityOption[] = [
   // Ireland
   { name: 'Trinity College Dublin', location: 'Dublin, Ireland', country: 'Ireland', tuition: 22000, livingMonthly: 1400, visa: 100, insurance: 450, defaultCourse: 'MSc Computer Science' },
   { name: 'University College Dublin (UCD)', location: 'Dublin, Ireland', country: 'Ireland', tuition: 20000, livingMonthly: 1350, visa: 100, insurance: 450, defaultCourse: 'MSc Data Science & AI' },
+
+  // France
+  { name: 'Sorbonne University', location: 'Paris, France', country: 'France', tuition: 4000, livingMonthly: 1200, visa: 100, insurance: 300, defaultCourse: 'MSc Computer Science' },
+  { name: 'Institut Polytechnique de Paris', location: 'Palaiseau, France', country: 'France', tuition: 6000, livingMonthly: 1100, visa: 100, insurance: 300, defaultCourse: 'MSc Data Science & AI' },
+
+  // Netherlands
+  { name: 'Delft University of Technology (TU Delft)', location: 'Delft, Netherlands', country: 'Netherlands', tuition: 19000, livingMonthly: 1300, visa: 210, insurance: 500, defaultCourse: 'MSc Computer Science' },
+  { name: 'University of Amsterdam', location: 'Amsterdam, Netherlands', country: 'Netherlands', tuition: 17500, livingMonthly: 1500, visa: 210, insurance: 500, defaultCourse: 'MSc Artificial Intelligence' },
+
+  // Sweden
+  { name: 'KTH Royal Institute of Technology', location: 'Stockholm, Sweden', country: 'Sweden', tuition: 15500, livingMonthly: 1100, visa: 150, insurance: 400, defaultCourse: 'MSc Computer Science' },
+  { name: 'Lund University', location: 'Lund, Sweden', country: 'Sweden', tuition: 14000, livingMonthly: 1000, visa: 150, insurance: 400, defaultCourse: 'MSc Data Science & AI' },
+
+  // Switzerland
+  { name: 'ETH Zurich', location: 'Zurich, Switzerland', country: 'Switzerland', tuition: 1600, livingMonthly: 2100, visa: 100, insurance: 850, defaultCourse: 'MSc Computer Science' },
+  { name: 'EPFL', location: 'Lausanne, Switzerland', country: 'Switzerland', tuition: 1600, livingMonthly: 1900, visa: 100, insurance: 850, defaultCourse: 'MSc Data Science & AI' },
+
+  // Singapore
+  { name: 'National University of Singapore (NUS)', location: 'Singapore', country: 'Singapore', tuition: 26000, livingMonthly: 1400, visa: 90, insurance: 400, defaultCourse: 'MSc Computer Science' },
+  { name: 'Nanyang Technological University (NTU)', location: 'Singapore', country: 'Singapore', tuition: 24500, livingMonthly: 1350, visa: 90, insurance: 400, defaultCourse: 'MSc Artificial Intelligence' },
+
+  // Japan
+  { name: 'University of Tokyo', location: 'Tokyo, Japan', country: 'Japan', tuition: 5000, livingMonthly: 1100, visa: 50, insurance: 250, defaultCourse: 'MSc Computer Science' },
+  { name: 'Kyoto University', location: 'Kyoto, Japan', country: 'Japan', tuition: 4800, livingMonthly: 950, visa: 50, insurance: 250, defaultCourse: 'MSc Data Science & AI' },
+
+  // South Korea
+  { name: 'Seoul National University (SNU)', location: 'Seoul, South Korea', country: 'South Korea', tuition: 6500, livingMonthly: 1050, visa: 60, insurance: 300, defaultCourse: 'MSc Computer Science' },
+  { name: 'KAIST', location: 'Daejeon, South Korea', country: 'South Korea', tuition: 4000, livingMonthly: 800, visa: 60, insurance: 250, defaultCourse: 'MSc Artificial Intelligence' },
+
+  // Italy
+  { name: 'Politecnico di Milano', location: 'Milan, Italy', country: 'Italy', tuition: 3900, livingMonthly: 1000, visa: 80, insurance: 200, defaultCourse: 'MSc Computer Science' },
+  { name: 'University of Bologna', location: 'Bologna, Italy', country: 'Italy', tuition: 3000, livingMonthly: 850, visa: 80, insurance: 200, defaultCourse: 'MSc Data Science & AI' },
+
+  // Spain
+  { name: 'University of Barcelona', location: 'Barcelona, Spain', country: 'Spain', tuition: 4500, livingMonthly: 950, visa: 90, insurance: 250, defaultCourse: 'MSc Computer Science' },
+
+  // UAE
+  { name: 'Khalifa University', location: 'Abu Dhabi, UAE', country: 'United Arab Emirates', tuition: 18000, livingMonthly: 1400, visa: 250, insurance: 600, defaultCourse: 'MSc Computer Science' },
+
+  // Finland
+  { name: 'Aalto University', location: 'Espoo, Finland', country: 'Finland', tuition: 13000, livingMonthly: 950, visa: 120, insurance: 350, defaultCourse: 'MSc Computer Science' },
+
+  // Norway
+  { name: 'University of Oslo', location: 'Oslo, Norway', country: 'Norway', tuition: 14000, livingMonthly: 1350, visa: 500, insurance: 400, defaultCourse: 'MSc Data Science & AI' },
+
+  // Denmark
+  { name: 'Technical University of Denmark (DTU)', location: 'Lyngby, Denmark', country: 'Denmark', tuition: 16000, livingMonthly: 1300, visa: 280, insurance: 400, defaultCourse: 'MSc Computer Science' },
+
+  // Austria
+  { name: 'University of Vienna', location: 'Vienna, Austria', country: 'Austria', tuition: 1500, livingMonthly: 950, visa: 160, insurance: 300, defaultCourse: 'MSc Computer Science' },
+
+  // Belgium
+  { name: 'KU Leuven', location: 'Leuven, Belgium', country: 'Belgium', tuition: 7000, livingMonthly: 1000, visa: 220, insurance: 300, defaultCourse: 'MSc Computer Science' },
+
+  // Poland
+  { name: 'University of Warsaw', location: 'Warsaw, Poland', country: 'Poland', tuition: 4000, livingMonthly: 650, visa: 100, insurance: 200, defaultCourse: 'MSc Computer Science' },
+
+  // China & Hong Kong
+  { name: 'Tsinghua University', location: 'Beijing, China', country: 'China', tuition: 5000, livingMonthly: 700, visa: 80, insurance: 150, defaultCourse: 'MSc Computer Science' },
+  { name: 'University of Hong Kong (HKU)', location: 'Hong Kong', country: 'Hong Kong', tuition: 22000, livingMonthly: 1400, visa: 60, insurance: 350, defaultCourse: 'MSc Computer Science' },
+
+  // Malaysia
+  { name: 'Universiti Malaya (UM)', location: 'Kuala Lumpur, Malaysia', country: 'Malaysia', tuition: 4500, livingMonthly: 500, visa: 150, insurance: 200, defaultCourse: 'MSc Computer Science' },
 ]
 
 const COURSE_PRESETS = [
@@ -60,7 +124,15 @@ const COURSE_PRESETS = [
   'BSc Computer Science & Engineering',
 ]
 
-const COUNTRIES = ['Germany', 'USA', 'UK', 'Canada', 'Australia', 'Ireland']
+const matchCountry = (uCountry: string, targetCountry: string) => {
+  if (!uCountry || !targetCountry) return false
+  if (uCountry.toLowerCase() === targetCountry.toLowerCase()) return true
+  if ((targetCountry === 'United States' || targetCountry === 'USA') && (uCountry === 'USA' || uCountry === 'United States')) return true
+  if ((targetCountry === 'United Kingdom' || targetCountry === 'UK') && (uCountry === 'UK' || uCountry === 'United Kingdom')) return true
+  if ((targetCountry === 'United Arab Emirates' || targetCountry === 'UAE') && (uCountry === 'UAE' || uCountry === 'United Arab Emirates')) return true
+  return false
+}
+
 const USD_TO_INR = 87.0
 
 export default function BudgetPage() {
@@ -80,12 +152,12 @@ export default function BudgetPage() {
   const [liveSourceUrl, setLiveSourceUrl] = useState<string | null>(null)
   const [liveSearchNotes, setLiveSearchNotes] = useState<string | null>(null)
 
-  const countryUnis = PRESET_UNIVERSITIES.filter((u) => u.country === selectedCountry)
+  const countryUnis = PRESET_UNIVERSITIES.filter((u) => matchCountry(u.country, selectedCountry))
 
   const activeUniName = selectedUniName === 'Custom' ? (customUniName || 'Custom University') : selectedUniName
   const activeCourseName = selectedCourse === 'Custom' ? (customCourseName || 'Custom Degree Program') : selectedCourse
-  const activeVisaFee = PRESET_UNIVERSITIES.find((u) => u.country === selectedCountry)?.visa || 200
-  const activeInsuranceFee = PRESET_UNIVERSITIES.find((u) => u.country === selectedCountry)?.insurance || 600
+  const activeVisaFee = PRESET_UNIVERSITIES.find((u) => matchCountry(u.country, selectedCountry))?.visa || 200
+  const activeInsuranceFee = PRESET_UNIVERSITIES.find((u) => matchCountry(u.country, selectedCountry))?.insurance || 600
 
   // Live Web Search for Tuition Fee via Tavily
   const fetchLiveWebTuition = async (uniName?: string, courseName?: string, countryName?: string) => {
@@ -125,8 +197,9 @@ export default function BudgetPage() {
 
   const handleCountryChange = (country: string) => {
     setSelectedCountry(country)
-    const firstUni = PRESET_UNIVERSITIES.find((u) => u.country === country)
-    if (firstUni) {
+    const matchingUnis = PRESET_UNIVERSITIES.filter((u) => matchCountry(u.country, country))
+    if (matchingUnis.length > 0) {
+      const firstUni = matchingUnis[0]
       setSelectedUniName(firstUni.name)
       setLocation(firstUni.location)
       setLivingMonthly(firstUni.livingMonthly)
@@ -136,8 +209,9 @@ export default function BudgetPage() {
     } else {
       setSelectedUniName('Custom')
       setLocation(`City, ${country}`)
-      setTuitionPerYear(15000)
-      setLivingMonthly(1000)
+      setTuitionPerYear(12000)
+      setLivingMonthly(950)
+      fetchLiveWebTuition('Top University', activeCourseName, country)
     }
   }
 
@@ -164,13 +238,18 @@ export default function BudgetPage() {
   const totalCost = (yearlyTotal * duration) - (scholarship * 1000)
   const totalINR = Math.max(totalCost, 0) * USD_TO_INR
 
-  const chartData = COUNTRIES.map((c) => {
-    const defaultUni = PRESET_UNIVERSITIES.find((u) => u.country === c) || PRESET_UNIVERSITIES[0]
+  const chartCountries = Array.from(new Set([
+    'Germany', 'United States', 'United Kingdom', 'Canada', 'Australia', 'Ireland', 'France', 'Netherlands', 'Singapore', 'Japan', selectedCountry
+  ]))
+
+  const chartData = chartCountries.map((c) => {
+    const defaultUni = PRESET_UNIVERSITIES.find((u) => matchCountry(u.country, c)) || PRESET_UNIVERSITIES[0]
+    const isSelected = matchCountry(c, selectedCountry)
     return {
       country: c,
-      Tuition: c === selectedCountry ? tuitionPerYear : defaultUni.tuition,
-      Living: defaultUni.livingMonthly * 12,
-      'Visa & Insurance': defaultUni.visa + defaultUni.insurance,
+      Tuition: isSelected ? tuitionPerYear : defaultUni.tuition,
+      Living: isSelected ? livingMonthly * 12 : defaultUni.livingMonthly * 12,
+      'Visa & Insurance': isSelected ? activeVisaFee + activeInsuranceFee : defaultUni.visa + defaultUni.insurance,
       Misc: 2000,
     }
   })
@@ -202,15 +281,30 @@ export default function BudgetPage() {
 
           {/* Destination Country */}
           <div>
-            <label className="label">Destination Country</label>
+            <label className="label">Destination Country (195+ World Countries)</label>
             <select
               value={selectedCountry}
               onChange={(e) => handleCountryChange(e.target.value)}
-              className="input"
+              className="input font-medium cursor-pointer bg-white"
             >
-              {COUNTRIES.map((c) => (
-                <option key={c} value={c}>{c}</option>
-              ))}
+              <optgroup label="🔥 Popular Destinations">
+                {TOP_POPULAR_COUNTRIES.map((c) => (
+                  <option key={c.name} value={c.name}>
+                    {c.flag} {c.name}
+                  </option>
+                ))}
+              </optgroup>
+              <optgroup label="🌍 All World Countries">
+                {ALL_WORLD_COUNTRIES.map((c) => {
+                  const topMatch = TOP_POPULAR_COUNTRIES.find((item) => item.name === c)
+                  const flag = topMatch ? topMatch.flag : '🌐'
+                  return (
+                    <option key={c} value={c}>
+                      {flag} {c}
+                    </option>
+                  )
+                })}
+              </optgroup>
             </select>
           </div>
 

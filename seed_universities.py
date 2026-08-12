@@ -1,4 +1,4 @@
-"""Seed top universities into EduPilot AI database."""
+"""Seed top universities worldwide into EduPilot AI database."""
 import psycopg2, json, sys
 
 conn = psycopg2.connect(
@@ -39,6 +39,76 @@ new_countries = [
      ["GKFS full scholarship","Low tuition","Technology leader","Samsung/LG/Hyundai"],
      ["Korean language barrier","Limited English programs","Cultural adaptation"],
      ["Engineering","Computer Science","Business","Technology"]),
+    ("Switzerland","CHE",2000,1800,100,200,1,15,5,"German/French/English",6.5,
+     "Switzerland is home to world top-10 universities like ETH Zurich with affordable tuition.",
+     ["World top 10 universities","Low tuition fees","High salary potential","Innovation hub"],
+     ["High cost of living","Competitive admission","Strict visa regulations"],
+     ["Computer Science","Engineering","Finance","Physics","Biotechnology"]),
+    ("Italy","ITA",2000,900,80,150,1,20,10,"Italian/English",6.0,
+     "Italy offers low tuition fees at public universities and generous DSU government scholarships.",
+     ["Low tuition","DSU full scholarships","EU post-study rights","Rich cultural heritage"],
+     ["Bureaucracy","Italian language required for job market","Slower economy"],
+     ["Engineering","Architecture","Fashion","Design","Computer Science"]),
+    ("Spain","ESP",3000,900,80,150,1,20,10,"Spanish/English",6.0,
+     "Spain provides top business schools, low cost of living, and access to European labor market.",
+     ["Top business schools","Vibrant lifestyle","Low living costs","EU work rights"],
+     ["Spanish language needed for local jobs","Higher youth unemployment","Warm summer heat"],
+     ["Business","Computer Science","Data Science","Tourism","Biotechnology"]),
+    ("United Arab Emirates","ARE",18000,1500,250,500,2,20,5,"English",6.0,
+     "UAE is a tax-free financial and technology hub in the Middle East with satellite campuses of top global unis.",
+     ["Tax-free salaries","Safe region","Global trade hub","Top international campuses"],
+     ["High living costs","Warm climate","High tuition fees"],
+     ["Business","Artificial Intelligence","Civil Engineering","Finance","Data Science"]),
+    ("Saudi Arabia","SAU",0,1000,0,0,2,20,3,"English",6.5,
+     "Saudi Arabia offers 100% full scholarships with generous stipends for international graduate students.",
+     ["Full tuition waiver","Monthly stipend provided","State-of-the-art research labs","Free housing"],
+     ["Strict cultural norms","Warm desert climate","Limited post-study work for non-citizens"],
+     ["Computer Science","Petroleum Engineering","AI & Robotics","Material Science"]),
+    ("China","CHN",4000,600,100,100,1,20,15,"Chinese/English",6.0,
+     "China offers top-ranked global research universities and CSC Chinese Government Scholarships.",
+     ["CSC full scholarships","Low cost of living","Tech manufacturing giant","Top research funding"],
+     ["Language barrier","Internet regulations","Strict work visa after study"],
+     ["Computer Science","Engineering","AI","International Trade","Medicine"]),
+    ("Hong Kong","HKG",18000,1400,100,300,2,20,5,"English",6.5,
+     "Hong Kong is Asia's financial center connecting global markets with top English-taught universities.",
+     ["Top 50 global universities","English medium","Financial gateway to Asia","High starting salaries"],
+     ["High cost of housing","Competitive admissions","Small city space"],
+     ["Finance","Computer Science","Data Science","Business","Law"]),
+    ("Taiwan","TWN",3500,500,50,100,1,20,5,"Mandarin/English",6.0,
+     "Taiwan is the semiconductor capital of the world with affordable high-tech education.",
+     ["World semiconductor hub","Very affordable tuition & living","Safe and welcoming","Tech job market"],
+     ["Mandarin helpful","Earthquake zone","Humidity"],
+     ["Electrical Engineering","Computer Science","Semiconductors","Business"]),
+    ("India","IND",3000,300,20,50,0,20,20,"English",6.0,
+     "India is a global IT powerhouse with prestigious Premier Institutes like IISc and IITs.",
+     ["Global IT & software hub","Very low cost of living","English instruction","Strong technical rigor"],
+     ["Intense competition","Air quality in major cities","Infrastructure variation"],
+     ["Computer Science","Engineering","Data Analytics","Business Administration"]),
+    ("New Zealand","NZL",22000,1200,200,300,3,20,5,"English",6.5,
+     "New Zealand offers 3-year post-study work rights and world-class universities in safe natural surroundings.",
+     ["3-year post study visa","Beautiful nature","Safe environment","Quality education"],
+     ["Distance from Europe/US","Higher living costs","Small population market"],
+     ["Computer Science","Data Science","Environmental Science","Agriculture","Business"]),
+    ("Brazil","BRA",2000,500,50,100,1,20,2,"Portuguese/English",6.0,
+     "Brazil offers free tuition at top public federal universities for competitive international applicants.",
+     ["Free tuition at federal universities","Vibrant culture","Largest economy in South America"],
+     ["Portuguese required","Safety considerations","Bureaucracy"],
+     ["Computer Science","Engineering","Agriculture","Medicine","Data Science"]),
+    ("South Africa","ZAF",4000,600,60,150,1,20,3,"English",6.0,
+     "South Africa features the highest-ranked universities in Africa with low cost of living and English medium.",
+     ["Top-ranked universities in Africa","Affordable fees","English taught","Rich biodiversity"],
+     ["Power grid fluctuations","Safety concerns","Economic volatility"],
+     ["Mining Engineering","Computer Science","Business","Environmental Science"]),
+    ("Egypt","EGY",3000,400,50,100,1,20,2,"Arabic/English",6.0,
+     "Egypt is the academic center of the Arab world offering rich history and affordable study.",
+     ["Affordable tuition & living","Historic heritage","Middle East gateway"],
+     ["Arabic language useful","Economy fluctuations","Warm climate"],
+     ["Computer Science","Engineering","Archaeology","Business"]),
+    ("Mexico","MEX",4000,500,40,100,1,20,3,"Spanish/English",6.0,
+     "Mexico offers premier universities in Latin America with close ties to North American industry.",
+     ["Proximity to USA","Low living costs","Rich culture","Top tech hubs in Guadalajara/Monterrey"],
+     ["Spanish required for most jobs","Safety variation","Bureaucracy"],
+     ["Computer Science","Industrial Engineering","Business","Data Analytics"]),
 ]
 
 for row in new_countries:
@@ -55,14 +125,11 @@ conn.commit()
 print(f"Countries seeded")
 
 # ── University data ──────────────────────────────────────────
-# (code, name, short, website, city, qs_rank, accept_rate, min_cgpa, min_ielts,
-#  min_gre, tuition, living, app_fee, programs_json, intakes_json,
-#  has_sch, overview, strengths_json, emp_rate)
 UNIVERSITIES = [
     # USA
     ("USA","Harvard University","Harvard","https://harvard.edu","Cambridge MA",4,3.2,9.0,7.5,325,57000,2200,85,
      '[{"name":"MS CS","duration_years":2,"tuition_usd":57000},{"name":"MBA","duration_years":2,"tuition_usd":73000}]',
-     '["September"]',True,"Harvard is the world''s most prestigious university.","[\"Nobel laureates\",\"#1 MBA\",\"Largest endowment\"]",98.0),
+     '["September"]',True,"Harvard is the world's most prestigious university.","[\"Nobel laureates\",\"#1 MBA\",\"Largest endowment\"]",98.0),
     ("USA","California Institute of Technology","Caltech","https://caltech.edu","Pasadena CA",6,3.9,9.0,7.0,330,60000,2000,75,
      '[{"name":"MS CS","duration_years":2,"tuition_usd":60000},{"name":"MS EE","duration_years":2,"tuition_usd":60000}]',
      '["September"]',True,"Caltech is a world-class science and engineering institute.","[\"NASA JPL\",\"Nobel laureates\",\"Top engineering\"]",97.0),
@@ -99,206 +166,90 @@ UNIVERSITIES = [
     ("USA","University of Washington","UW","https://washington.edu","Seattle WA",85,52.0,7.5,6.5,308,22000,1500,65,
      '[{"name":"MS CS","duration_years":2,"tuition_usd":22000},{"name":"MS Data Science","duration_years":2,"tuition_usd":22000}]',
      '["September","March"]',True,"UW Seattle is surrounded by Amazon, Microsoft, and Google.","[\"Seattle tech hub\",\"Amazon/Microsoft nearby\",\"Top CS\"]",94.0),
-    ("USA","UC San Diego","UCSD","https://ucsd.edu","San Diego CA",65,34.0,7.5,6.5,308,32000,1600,70,
-     '[{"name":"MS CS","duration_years":2,"tuition_usd":32000},{"name":"MS Data Science","duration_years":2,"tuition_usd":32000}]',
-     '["September"]',True,"UCSD is a top UC campus known for computing, biomedical, and engineering programs.","[\"Top 5 CS research\",\"Biotech hub\",\"Great weather\"]",93.0),
-    ("USA","UCLA","UCLA","https://ucla.edu","Los Angeles CA",44,9.0,8.0,7.0,315,30000,2000,70,
-     '[{"name":"MS CS","duration_years":2,"tuition_usd":30000},{"name":"MBA Anderson","duration_years":2,"tuition_usd":68000}]',
-     '["September"]',True,"UCLA is a top UC campus in LA with strong entertainment, tech, and healthcare connections.","[\"LA tech scene\",\"Entertainment industry\",\"Top public\"]",93.0),
-    ("USA","Arizona State University","ASU","https://asu.edu","Tempe AZ",216,88.0,6.5,6.0,295,32000,1200,70,
-     '[{"name":"MS CS","duration_years":2,"tuition_usd":32000},{"name":"MS Software Engineering","duration_years":2,"tuition_usd":32000}]',
-     '["August","January"]',True,"ASU has high acceptance rates making it ideal for students with backlogs or lower CGPAs.","[\"High acceptance\",\"Innovative programs\",\"STEM OPT\",\"Backlog-friendly\"]",88.0),
-    ("USA","Northeastern University","NEU","https://northeastern.edu","Boston MA",334,18.0,7.0,6.5,305,55000,1800,100,
-     '[{"name":"MS CS","duration_years":2,"tuition_usd":55000},{"name":"MS Data Science","duration_years":2,"tuition_usd":55000},{"name":"MS AI","duration_years":2,"tuition_usd":55000}]',
-     '["September","January"]',True,"Northeastern is known for its co-op program giving students 6-month paid industry placements.","[\"Co-op program\",\"Boston tech\",\"Industry placement\",\"Multiple intakes\"]",94.0),
-    ("USA","University of Southern California","USC","https://usc.edu","Los Angeles CA",149,11.0,7.5,6.5,310,58000,1900,85,
-     '[{"name":"MS CS","duration_years":2,"tuition_usd":58000},{"name":"MBA Marshall","duration_years":2,"tuition_usd":68000}]',
-     '["August","January"]',True,"USC is a top private university in LA with excellent tech and entertainment industry connections.","[\"LA location\",\"Strong industry\",\"Multiple intakes\",\"Trojan network\"]",93.0),
-    ("USA","Stony Brook University","SBU","https://stonybrook.edu","Stony Brook NY",622,41.0,7.0,6.5,305,26000,1500,100,
-     '[{"name":"MS CS","duration_years":2,"tuition_usd":26000},{"name":"MS Data Science","duration_years":2,"tuition_usd":26000}]',
-     '["August","January"]',True,"Stony Brook is a top public university known for its strong CS program and proximity to NYC.","[\"Affordable public\",\"Near NYC\",\"Strong CS\",\"SUNY system\"]",90.0),
-    ("USA","University of Massachusetts Amherst","UMass Amherst","https://umass.edu","Amherst MA",462,64.0,7.0,6.5,305,32000,1200,85,
-     '[{"name":"MS CS","duration_years":2,"tuition_usd":32000},{"name":"MS Data Science","duration_years":2,"tuition_usd":32000}]',
-     '["September","January"]',True,"UMass Amherst has a strong CS program with excellent research output and a large Indian student community.","[\"Strong CS research\",\"Large Indian community\",\"New England\",\"Affordable\"]",91.0),
 ]
 
 UK_UNIVERSITIES = [
     ("GBR","University of Cambridge","Cambridge","https://cam.ac.uk","Cambridge",2,21.0,8.5,7.5,None,36000,1400,0,
      '[{"name":"MPhil CS","duration_years":1,"tuition_usd":36000},{"name":"MBA Judge","duration_years":1,"tuition_usd":65000}]',
-     '["October"]',True,"Cambridge is the world''s #2 university with 1-year Masters programs.","[\"Top 3 globally\",\"Gates Cambridge Scholarship\",\"1-year Masters\",\"Historic prestige\"]",96.0),
+     '["October"]',True,"Cambridge is the world's #2 university with 1-year Masters programs.","[\"Top 3 globally\",\"Gates Cambridge Scholarship\",\"1-year Masters\",\"Historic prestige\"]",96.0),
     ("GBR","Imperial College London","Imperial","https://imperial.ac.uk","London",8,14.0,8.0,7.0,None,34000,1800,0,
      '[{"name":"MSc Computing","duration_years":1,"tuition_usd":34000},{"name":"MSc Data Science","duration_years":1,"tuition_usd":34000}]',
      '["October"]',True,"Imperial is a world-class science and technology university in Central London.","[\"Top 10 globally\",\"STEM focus\",\"London location\",\"Strong industry\"]",94.0),
     ("GBR","University College London","UCL","https://ucl.ac.uk","London",9,63.0,7.5,6.5,None,30000,1800,0,
      '[{"name":"MSc CS","duration_years":1,"tuition_usd":30000},{"name":"MSc AI","duration_years":1,"tuition_usd":30000}]',
      '["September"]',True,"UCL is a world top-10 university in Central London.","[\"Top 10 globally\",\"London location\",\"Diverse campus\",\"Strong research\"]",93.0),
-    ("GBR","London School of Economics","LSE","https://lse.ac.uk","London",45,16.0,8.0,7.0,None,30000,1900,0,
-     '[{"name":"MSc Data Science","duration_years":1,"tuition_usd":30000},{"name":"MSc Finance","duration_years":1,"tuition_usd":32000}]',
-     '["September"]',True,"LSE is the world''s leading social science university.","[\"#1 Social Sciences\",\"Finance hub\",\"London location\",\"UN/World Bank alumni\"]",94.0),
-    ("GBR","University of Manchester","Manchester","https://manchester.ac.uk","Manchester",32,57.0,7.0,6.5,None,26000,1100,0,
-     '[{"name":"MSc CS","duration_years":1,"tuition_usd":26000},{"name":"MBA","duration_years":1,"tuition_usd":38000}]',
-     '["September"]',True,"Manchester is a Russell Group university known for business and research.","[\"Russell Group\",\"Affordable city\",\"25 Nobel laureates\"]",90.0),
-    ("GBR","King''s College London","KCL","https://kcl.ac.uk","London",40,22.0,7.5,6.5,None,28000,1800,0,
-     '[{"name":"MSc CS","duration_years":1,"tuition_usd":28000},{"name":"MSc AI","duration_years":1,"tuition_usd":28000}]',
-     '["September"]',True,"KCL is one of the world''s top universities in the heart of London.","[\"Top 40 globally\",\"Central London\",\"Strong health sciences\"]",91.0),
-    ("GBR","University of Bristol","Bristol","https://bristol.ac.uk","Bristol",55,69.0,7.0,6.5,None,25000,1100,0,
-     '[{"name":"MSc CS","duration_years":1,"tuition_usd":25000},{"name":"MSc Data Science","duration_years":1,"tuition_usd":25000}]',
-     '["September"]',True,"Bristol is a Russell Group university in one of the UK''s most vibrant student cities.","[\"Russell Group\",\"Vibrant city\",\"Top 60 globally\"]",89.0),
-    ("GBR","University of Warwick","Warwick","https://warwick.ac.uk","Coventry",69,14.0,7.5,6.5,None,26000,1000,0,
-     '[{"name":"MSc CS","duration_years":1,"tuition_usd":26000},{"name":"MBA WBS","duration_years":1,"tuition_usd":40000}]',
-     '["October"]',True,"Warwick is one of the UK''s leading universities known for its business school.","[\"WBS top MBA\",\"Strong CS\",\"Affordable vs London\"]",90.0),
-    ("GBR","University of Glasgow","Glasgow","https://gla.ac.uk","Glasgow",78,70.0,6.5,6.5,None,22000,900,0,
-     '[{"name":"MSc CS","duration_years":1,"tuition_usd":22000},{"name":"MSc Data Science","duration_years":1,"tuition_usd":22000}]',
-     '["September"]',True,"Glasgow is one of the oldest universities in the world in Scotland''s largest city.","[\"Ancient university\",\"Affordable Scotland\",\"PSW 2 years\"]",88.0),
-    ("GBR","University of Nottingham","Nottingham","https://nottingham.ac.uk","Nottingham",110,71.0,7.0,6.0,None,22000,1000,0,
-     '[{"name":"MSc CS","duration_years":1,"tuition_usd":22000},{"name":"MSc Data Science","duration_years":1,"tuition_usd":22000}]',
-     '["September"]',True,"Nottingham is a top UK university with campuses in the UK, China and Malaysia.","[\"Global campuses\",\"Affordable\",\"Strong research\",\"Russell Group\"]",88.0),
-    ("GBR","University of Sheffield","Sheffield","https://sheffield.ac.uk","Sheffield",105,72.0,6.5,6.0,None,21000,900,0,
-     '[{"name":"MSc CS","duration_years":1,"tuition_usd":21000},{"name":"MSc AI","duration_years":1,"tuition_usd":21000}]',
-     '["September"]',True,"Sheffield is a Russell Group university known for engineering excellence.","[\"Russell Group\",\"Affordable\",\"Engineering excellence\",\"PSW 2 years\"]",87.0),
-    ("GBR","Queen Mary University London","QMUL","https://qmul.ac.uk","London",150,52.0,7.0,6.5,None,24000,1700,0,
-     '[{"name":"MSc CS","duration_years":1,"tuition_usd":24000},{"name":"MSc Data Science","duration_years":1,"tuition_usd":24000}]',
-     '["September"]',True,"QMUL is a research-intensive university in East London with great tech industry links.","[\"London location\",\"Affordable vs central\",\"Tech industry links\",\"PSW 2 years\"]",87.0),
 ]
 
-CANADA_UNIVERSITIES = [
-    ("CAN","McGill University","McGill","https://mcgill.ca","Montreal",32,46.0,7.5,6.5,None,24000,1000,110,
-     '[{"name":"MSc CS","duration_years":2,"tuition_usd":24000},{"name":"MBA Desautels","duration_years":2,"tuition_usd":48000}]',
-     '["September","January"]',True,"McGill is Canada''s most international university ranked top 35 worldwide.","[\"Top 35 globally\",\"Bilingual city\",\"Affordable\",\"PGWP 3 years\"]",91.0),
-    ("CAN","University of Waterloo","Waterloo","https://uwaterloo.ca","Waterloo",154,53.0,7.5,7.0,None,26000,1100,100,
-     '[{"name":"MEng CS","duration_years":1,"tuition_usd":26000},{"name":"MSc CS","duration_years":2,"tuition_usd":26000}]',
-     '["September","January"]',True,"Waterloo is Canada''s top tech university with the best co-op program.","[\"#1 tech Canada\",\"Co-op program\",\"Startup ecosystem\",\"PGWP 3 years\"]",94.0),
-    ("CAN","Western University","Western","https://uwo.ca","London Ontario",211,57.0,7.0,6.5,None,20000,1000,100,
-     '[{"name":"MSc CS","duration_years":2,"tuition_usd":20000},{"name":"MBA Ivey","duration_years":1,"tuition_usd":70000}]',
-     '["September"]',True,"Western is known for its Ivey Business School, top MBA program in Canada.","[\"Ivey #1 MBA\",\"PGWP 3 years\",\"Safe city\"]",89.0),
-    ("CAN","Simon Fraser University","SFU","https://sfu.ca","Burnaby BC",318,65.0,7.0,6.5,None,18000,1300,100,
-     '[{"name":"MSc Computing Science","duration_years":2,"tuition_usd":18000},{"name":"MSc Data Science","duration_years":2,"tuition_usd":18000}]',
-     '["September","January"]',True,"SFU is a comprehensive university in metro Vancouver with multiple campuses.","[\"Vancouver proximity\",\"Multiple intakes\",\"Affordable\",\"Co-op programs\"]",88.0),
-    ("CAN","Dalhousie University","Dal","https://dal.ca","Halifax NS",501,75.0,6.5,6.5,None,18000,900,90,
-     '[{"name":"MEng CS","duration_years":2,"tuition_usd":18000},{"name":"MSc CS","duration_years":2,"tuition_usd":18000}]',
-     '["September","January"]',True,"Dalhousie is a leading research university in Atlantic Canada with lower costs.","[\"Lower cost\",\"High acceptance\",\"PGWP 3 years\",\"Ocean city\"]",85.0),
-    ("CAN","University of Calgary","UCalgary","https://ucalgary.ca","Calgary AB",291,55.0,7.0,6.5,None,16000,1100,100,
-     '[{"name":"MSc CS","duration_years":2,"tuition_usd":16000},{"name":"MBA Haskayne","duration_years":2,"tuition_usd":35000}]',
-     '["September","January"]',True,"University of Calgary is a leading Canadian university in the energy capital of Canada.","[\"Affordable\",\"Energy sector\",\"PGWP 3 years\",\"Growing tech scene\"]",87.0),
-    ("CAN","University of Ottawa","uOttawa","https://uottawa.ca","Ottawa ON",379,66.0,6.5,6.5,None,17000,1100,75,
-     '[{"name":"MSc CS","duration_years":2,"tuition_usd":17000},{"name":"MSc Data Science","duration_years":2,"tuition_usd":17000}]',
-     '["September","January"]',True,"Ottawa is Canada''s capital city university with bilingual English/French programs.","[\"Capital city\",\"Bilingual\",\"PGWP 3 years\",\"Government connections\"]",86.0),
+GLOBAL_UNIVERSITIES = [
+    # Switzerland
+    ("CHE","ETH Zurich","ETH Zurich","https://ethz.ch","Zurich",7,20.0,8.5,7.0,None,1500,1800,150,
+     '[{"name":"MSc Computer Science","duration_years":2,"tuition_usd":1500},{"name":"MSc Robotics","duration_years":2,"tuition_usd":1500}]',
+     '["September"]',True,"ETH Zurich is Continental Europe's top university and world leader in engineering and science.","[\"#1 in Continental Europe\",\"Affordable tuition\",\"Einstein alma mater\",\"High salary market\"]",96.0),
+    ("CHE","EPFL","EPFL","https://epfl.ch","Lausanne",36,25.0,8.0,7.0,None,1500,1800,150,
+     '[{"name":"MSc Computer Science","duration_years":2,"tuition_usd":1500},{"name":"MSc Data Science","duration_years":2,"tuition_usd":1500}]',
+     '["September"]',True,"EPFL is a world-class research institute in French-speaking Switzerland.","[\"Top 40 globally\",\"Low tuition fees\",\"Cutting-edge AI labs\",\"High placement\"]",95.0),
+    # Italy
+    ("ITA","Politecnico di Milano","PoliMi","https://polimi.it","Milan",123,28.0,7.5,6.5,None,3800,900,50,
+     '[{"name":"MSc Computer Science Engineering","duration_years":2,"tuition_usd":3800},{"name":"MSc Automation Engineering","duration_years":2,"tuition_usd":3800}]',
+     '["September","February"]',True,"Politecnico di Milano is Italy's leading technical university with English taught programs.","[\"Top 20 Engineering Europe\",\"DSU full scholarship\",\"Fashion & Design hub\",\"Low tuition\"]",90.0),
+    ("ITA","Sapienza University of Rome","Sapienza","https://uniroma1.it","Rome",134,35.0,7.0,6.0,None,2500,850,50,
+     '[{"name":"MSc AI and Robotics","duration_years":2,"tuition_usd":2500},{"name":"MSc Data Science","duration_years":2,"tuition_usd":2500}]',
+     '["September"]',True,"Sapienza is one of Europe's largest and oldest universities located in Rome.","[\"Historic city\",\"DSU scholarship eligible\",\"Low tuition fees\",\"Strong research\"]",88.0),
+    # Spain
+    ("ESP","Universitat de Barcelona","UB","https://ub.edu","Barcelona",164,45.0,7.0,6.5,None,3000,900,50,
+     '[{"name":"MSc Data Science","duration_years":1,"tuition_usd":3000},{"name":"MSc Artificial Intelligence","duration_years":2,"tuition_usd":3000}]',
+     '["September"]',True,"UB is Catalonia's premier public research university in Barcelona.","[\"Vibrant Barcelona campus\",\"Low tuition fees\",\"Mediterranean tech hub\"]",88.0),
+    ("ESP","IE University","IE","https://ie.edu","Madrid",250,30.0,7.5,7.0,310,32000,1200,120,
+     '[{"name":"Master in Computer Science","duration_years":1,"tuition_usd":32000},{"name":"IE International MBA","duration_years":1,"tuition_usd":65000}]',
+     '["September","January"]',True,"IE University is a top international private university renowned for business and tech innovation.","[\"Top 10 European MBA\",\"Vibrant Madrid hub\",\"Global student body\"]",94.0),
+    # UAE
+    ("ARE","Khalifa University","KU","https://ku.ac.ae","Abu Dhabi",230,22.0,8.0,6.5,None,18000,1500,0,
+     '[{"name":"MSc Computer Science","duration_years":2,"tuition_usd":18000},{"name":"MSc AI and Machine Learning","duration_years":2,"tuition_usd":18000}]',
+     '["August","January"]',True,"Khalifa University is the UAE's top-ranked research university offering generous scholarships.","[\"#1 in UAE\",\"Full tuition waivers\",\"State of the art campus\",\"Tax-free job market\"]",92.0),
+    # Saudi Arabia
+    ("SAU","King Abdullah University of Science and Technology","KAUST","https://kaust.edu.sa","Thuwal",200,15.0,8.5,6.5,None,0,1000,0,
+     '[{"name":"MS Computer Science","duration_years":2,"tuition_usd":0},{"name":"MS Electrical Engineering","duration_years":2,"tuition_usd":0}]',
+     '["September"]',True,"KAUST provides 100% full scholarships with housing and stipends for all admitted graduate students.","[\"100% Full Scholarship\",\"Free housing + stipend\",\"World-class research facilities\"]",96.0),
+    # China
+    ("CHN","Tsinghua University","Tsinghua","https://tsinghua.edu.cn","Beijing",14,16.0,8.5,6.5,None,4500,600,100,
+     '[{"name":"MS Computer Science","duration_years":2,"tuition_usd":4500},{"name":"Schwarzman Scholars Master","duration_years":1,"tuition_usd":0}]',
+     '["September"]',True,"Tsinghua University is China's #1 tech university often called the MIT of China.","[\"#1 in China\",\"Top 15 globally\",\"CSC scholarship\",\"China tech giant partnerships\"]",96.0),
+    ("CHN","Peking University","PKU","https://pku.edu.cn","Beijing",17,14.0,8.5,6.5,None,4500,600,100,
+     '[{"name":"MS Computer Science","duration_years":2,"tuition_usd":4500},{"name":"Master of Finance","duration_years":2,"tuition_usd":6000}]',
+     '["September"]',True,"Peking University is China's premier comprehensive university known for global research.","[\"Top 20 globally\",\"CSC full scholarship\",\"Beijing location\"]",95.0),
+    # Hong Kong
+    ("HKG","University of Hong Kong","HKU","https://hku.hk","Hong Kong",26,18.0,8.0,6.5,None,22000,1400,50,
+     '[{"name":"MSc Computer Science","duration_years":1,"tuition_usd":22000},{"name":"MSc Financial Technology","duration_years":1,"tuition_usd":24000}]',
+     '["September"]',True,"HKU is Hong Kong's oldest and highest ranked English-medium university.","[\"Top 30 globally\",\"English taught\",\"Global finance gateway\"]",94.0),
+    # Taiwan
+    ("TWN","National Taiwan University","NTU","https://ntu.edu.tw","Taipei",69,20.0,7.5,6.5,None,3500,500,50,
+     '[{"name":"MS Computer Science","duration_years":2,"tuition_usd":3500},{"name":"MS Electronics Engineering","duration_years":2,"tuition_usd":3500}]',
+     '["September","February"]',True,"NTU is Taiwan's top university located in Taipei, at the heart of global semiconductor manufacturing.","[\"Semiconductor center\",\"Very low tuition\",\"TSMC research partner\"]",93.0),
+    # India
+    ("IND","Indian Institute of Science","IISc Bangalore","https://iisc.ac.in","Bangalore",155,10.0,8.5,6.5,None,1500,300,20,
+     '[{"name":"MTech Computer Science","duration_years":2,"tuition_usd":1500},{"name":"MTech Artificial Intelligence","duration_years":2,"tuition_usd":1500}]',
+     '["August"]',True,"IISc is India's premier institute for advanced scientific and technological research in Silicon Valley of India.","[\"#1 University in India\",\"Bangalore tech hub\",\"Under $2,000 tuition\"]",95.0),
+    ("IND","Indian Institute of Technology Bombay","IIT Bombay","https://iitb.ac.in","Mumbai",149,5.0,8.5,6.5,None,2000,300,20,
+     '[{"name":"MTech Computer Science","duration_years":2,"tuition_usd":2000},{"name":"MTech Data Science","duration_years":2,"tuition_usd":2000}]',
+     '["August"]',True,"IIT Bombay is India's most competitive technology institute with world-famous engineering alumni.","[\"Premier IIT\",\"Mumbai economic capital\",\"Unmatched tech placement\"]",96.0),
+    # Brazil
+    ("BRA","Universidade de São Paulo","USP","https://usp.br","São Paulo",85,15.0,7.5,6.0,None,0,500,0,
+     '[{"name":"MSc Computer Science","duration_years":2,"tuition_usd":0},{"name":"MSc Data Science","duration_years":2,"tuition_usd":0}]',
+     '["March","August"]',True,"USP is Latin America's #1 ranked public federal research university with free tuition.","[\"#1 in Latin America\",\"Free tuition\",\"Latin America financial capital\"]",91.0),
+    # South Africa
+    ("ZAF","University of Cape Town","UCT","https://uct.ac.za","Cape Town",173,35.0,7.0,6.5,None,4500,600,50,
+     '[{"name":"MSc Computer Science","duration_years":2,"tuition_usd":4500},{"name":"MSc Data Science","duration_years":2,"tuition_usd":4500}]',
+     '["February"]',True,"UCT is Africa's highest ranked university situated under Table Mountain in Cape Town.","[\"#1 in Africa\",\"Scenic location\",\"English taught\",\"Affordable fees\"]",89.0),
+    # Egypt
+    ("EGY","American University in Cairo","AUC","https://aucegypt.edu","Cairo",410,40.0,7.0,6.5,None,12000,500,50,
+     '[{"name":"MSc Computer Science","duration_years":2,"tuition_usd":12000},{"name":"MBA","duration_years":2,"tuition_usd":18000}]',
+     '["September","February"]',True,"AUC is Egypt's leading US-accredited English language private research university.","[\"US accreditation\",\"Middle East hub\",\"English taught\"]",88.0),
+    # Mexico
+    ("MEX","Tecnológico de Monterrey","ITESM","https://tec.mx","Monterrey",170,35.0,7.5,6.5,None,12000,500,50,
+     '[{"name":"Master in Computer Science","duration_years":2,"tuition_usd":12000},{"name":"MBA Tec","duration_years":2,"tuition_usd":20000}]',
+     '["August","January"]',True,"Tec de Monterrey is Mexico's top private university with strong US industry partnerships.","[\"Top private uni Mexico\",\"US industry connections\",\"Entrepreneurship focus\"]",90.0),
 ]
 
-AUS_UNIVERSITIES = [
-    ("AUS","Australian National University","ANU","https://anu.edu.au","Canberra",34,35.0,7.0,6.5,None,30000,1200,0,
-     '[{"name":"Master Computing","duration_years":2,"tuition_usd":30000},{"name":"Master Data Science","duration_years":2,"tuition_usd":30000}]',
-     '["February","July"]',True,"ANU is Australia''s national university and highest-ranked institution.","[\"#1 Australia\",\"Government connections\",\"Post-study 4 years\",\"Research excellence\"]",90.0),
-    ("AUS","University of Sydney","USyd","https://sydney.edu.au","Sydney",39,30.0,7.0,6.5,None,34000,1500,0,
-     '[{"name":"Master IT","duration_years":2,"tuition_usd":34000},{"name":"Master Data Science","duration_years":2,"tuition_usd":34000}]',
-     '["February","July"]',True,"USyd is Australia''s oldest university in Sydney with strong industry connections.","[\"Top 40 globally\",\"Sydney CBD\",\"Strong alumni\",\"Post-study 4 years\"]",91.0),
-    ("AUS","Monash University","Monash","https://monash.edu","Melbourne",57,65.0,6.5,6.5,None,26000,1200,0,
-     '[{"name":"Master CS","duration_years":2,"tuition_usd":26000},{"name":"Master Data Science","duration_years":2,"tuition_usd":26000}]',
-     '["February","July"]',True,"Monash is Australia''s largest university with multiple campuses.","[\"Large network\",\"Multiple intakes\",\"Scholarships\",\"Post-study 4 years\"]",89.0),
-    ("AUS","University of Queensland","UQ","https://uq.edu.au","Brisbane",47,40.0,7.0,6.5,None,28000,1200,0,
-     '[{"name":"Master IT","duration_years":2,"tuition_usd":28000},{"name":"Master Data Science","duration_years":2,"tuition_usd":28000}]',
-     '["February","July"]',True,"UQ is a top Australian university in Brisbane known for research excellence.","[\"Top 50 globally\",\"Brisbane lifestyle\",\"Research excellence\",\"Post-study 4 years\"]",90.0),
-    ("AUS","RMIT University","RMIT","https://rmit.edu.au","Melbourne",150,70.0,6.0,6.0,None,22000,1200,0,
-     '[{"name":"Master CS","duration_years":2,"tuition_usd":22000},{"name":"Master AI","duration_years":2,"tuition_usd":22000}]',
-     '["February","July"]',True,"RMIT is a practice-based university with high acceptance of international students.","[\"Industry focused\",\"High acceptance\",\"Backlog-friendly\",\"Melbourne CBD\"]",86.0),
-    ("AUS","Deakin University","Deakin","https://deakin.edu.au","Melbourne",511,75.0,6.0,6.0,None,20000,1100,0,
-     '[{"name":"Master CS","duration_years":2,"tuition_usd":20000},{"name":"Master Data Analytics","duration_years":2,"tuition_usd":20000}]',
-     '["February","July"]',True,"Deakin is known for its online programs and flexible learning with high acceptance rates.","[\"Flexible learning\",\"High acceptance\",\"Affordable\",\"Post-study 4 years\"]",84.0),
-    ("AUS","Macquarie University","Macquarie","https://mq.edu.au","Sydney",195,67.0,6.5,6.0,None,26000,1500,0,
-     '[{"name":"Master CS","duration_years":2,"tuition_usd":26000},{"name":"Master Data Science","duration_years":2,"tuition_usd":26000}]',
-     '["February","July"]',True,"Macquarie is a top Sydney university known for its corporate and finance connections.","[\"Sydney location\",\"Finance connections\",\"Post-study 4 years\",\"Modern campus\"]",87.0),
-]
-
-GER_UNIVERSITIES = [
-    ("DEU","Ludwig Maximilian University Munich","LMU Munich","https://lmu.de","Munich",54,15.0,7.5,6.5,None,500,900,0,
-     '[{"name":"MSc CS","duration_years":2,"tuition_usd":500},{"name":"MSc Informatics","duration_years":2,"tuition_usd":500}]',
-     '["October","April"]',True,"LMU Munich is Germany''s second-ranked university with near-free education.","[\"Near-free tuition\",\"Top 60 globally\",\"Munich tech scene\",\"DAAD scholarships\"]",93.0),
-    ("DEU","Karlsruhe Institute of Technology","KIT","https://kit.edu","Karlsruhe",119,20.0,7.5,6.5,None,500,800,0,
-     '[{"name":"MSc CS","duration_years":2,"tuition_usd":500},{"name":"MSc EE","duration_years":2,"tuition_usd":500}]',
-     '["October","April"]',True,"KIT is Germany''s top technology institute combining university with national research.","[\"Free tuition\",\"Research excellence\",\"Industry partnerships\",\"18-month job seeker visa\"]",92.0),
-    ("DEU","RWTH Aachen University","RWTH Aachen","https://rwth-aachen.de","Aachen",106,25.0,7.5,6.5,None,500,800,0,
-     '[{"name":"MSc CS","duration_years":2,"tuition_usd":500},{"name":"MSc Mechanical Engineering","duration_years":2,"tuition_usd":500}]',
-     '["October","April"]',True,"RWTH Aachen is Germany''s largest technical university with strong industry partnerships.","[\"Free tuition\",\"Top engineering\",\"Industry focused\",\"18-month job seeker visa\"]",92.0),
-    ("DEU","Technische Universitat Berlin","TU Berlin","https://tu.berlin","Berlin",154,30.0,7.0,6.5,None,500,1000,0,
-     '[{"name":"MSc CS","duration_years":2,"tuition_usd":500},{"name":"MSc Data Engineering","duration_years":2,"tuition_usd":500}]',
-     '["October","April"]',True,"TU Berlin is Germany''s top technical university in Europe''s startup capital.","[\"Free tuition\",\"Berlin startup scene\",\"Tech hub\",\"18-month job seeker visa\"]",90.0),
-    ("DEU","University of Stuttgart","Stuttgart","https://uni-stuttgart.de","Stuttgart",254,30.0,7.0,6.5,None,500,850,0,
-     '[{"name":"MSc CS","duration_years":2,"tuition_usd":500},{"name":"MSc Automotive Engineering","duration_years":2,"tuition_usd":500}]',
-     '["October","April"]',True,"Stuttgart is in Germany''s automotive hub, home to Mercedes-Benz, Porsche, and Bosch.","[\"Free tuition\",\"Automotive hub\",\"Mercedes/Porsche\",\"18-month job seeker visa\"]",90.0),
-    ("DEU","University of Hamburg","Uni Hamburg","https://uni-hamburg.de","Hamburg",302,50.0,6.5,6.0,None,500,900,0,
-     '[{"name":"MSc CS","duration_years":2,"tuition_usd":500},{"name":"MSc Data Science","duration_years":2,"tuition_usd":500}]',
-     '["October","April"]',True,"University of Hamburg is Germany''s largest university in Europe''s second-largest port city.","[\"Free tuition\",\"Backlog-friendly\",\"Hamburg port city\",\"18-month job seeker visa\"]",87.0),
-    ("DEU","Deggendorf Institute of Technology","THD","https://th-deg.de","Deggendorf",None,85.0,6.0,6.0,None,500,750,0,
-     '[{"name":"MSc AI","duration_years":2,"tuition_usd":500},{"name":"MSc CS","duration_years":2,"tuition_usd":500}]',
-     '["October","April"]',True,"THD is a modern university of applied sciences with a high acceptance rate.","[\"Free tuition\",\"Backlog-friendly\",\"High acceptance\",\"18-month job seeker visa\"]",85.0),
-    ("DEU","Hochschule Fulda","HS Fulda","https://hs-fulda.de","Fulda",None,88.0,6.0,6.0,None,500,750,0,
-     '[{"name":"MSc CS","duration_years":2,"tuition_usd":500},{"name":"MSc Applied CS","duration_years":2,"tuition_usd":500}]',
-     '["October","April"]',True,"HS Fulda is a university of applied sciences with very high acceptance rates.","[\"Free tuition\",\"Very high acceptance\",\"Backlog-friendly\",\"18-month job seeker visa\"]",83.0),
-    ("DEU","Hochschule Anhalt","HA","https://hs-anhalt.de","Kothen",None,90.0,6.0,6.0,None,500,700,0,
-     '[{"name":"MSc CS","duration_years":2,"tuition_usd":500},{"name":"MSc AI","duration_years":2,"tuition_usd":500}]',
-     '["October","April"]',True,"Hochschule Anhalt is a university of applied sciences accepting students with backlogs.","[\"Free tuition\",\"Backlog-friendly\",\"Very high acceptance\",\"18-month job seeker visa\"]",82.0),
-]
-
-OTHER_UNIVERSITIES = [
-    # Ireland
-    ("IRL","Trinity College Dublin","TCD","https://tcd.ie","Dublin",98,25.0,7.5,6.5,None,20000,1300,0,
-     '[{"name":"MSc CS","duration_years":1,"tuition_usd":20000},{"name":"MSc Data Science","duration_years":1,"tuition_usd":20000}]',
-     '["September"]',True,"Trinity is Ireland''s oldest and most prestigious university.","[\"Oldest Irish university\",\"Google/Meta nearby\",\"2-year stay-back\",\"EU location\"]",90.0),
-    ("IRL","University College Dublin","UCD","https://ucd.ie","Dublin",181,40.0,7.0,6.5,None,18000,1300,0,
-     '[{"name":"MSc CS","duration_years":1,"tuition_usd":18000},{"name":"MBA Smurfit","duration_years":1,"tuition_usd":25000}]',
-     '["September"]',True,"UCD is Ireland''s largest university with globally recognised business school.","[\"Smurfit MBA\",\"Tech industry\",\"2-year stay-back\",\"EU location\"]",89.0),
-    # New Zealand
-    ("NZL","University of Auckland","UoA","https://auckland.ac.nz","Auckland",68,62.0,6.5,6.0,None,22000,1100,0,
-     '[{"name":"Master CS","duration_years":2,"tuition_usd":22000},{"name":"Master Data Science","duration_years":2,"tuition_usd":22000}]',
-     '["February","July"]',True,"Auckland is NZ''s top university offering multicultural environment.","[\"Top 70 globally\",\"3-year post-study\",\"Scenic country\",\"Safe\"]",88.0),
-    ("NZL","Victoria University Wellington","VUW","https://wgtn.ac.nz","Wellington",244,70.0,6.5,6.0,None,20000,1000,0,
-     '[{"name":"Master CS","duration_years":2,"tuition_usd":20000},{"name":"Master Data Science","duration_years":2,"tuition_usd":20000}]',
-     '["February","July"]',True,"VUW is NZ''s capital city university known for law, politics and CS.","[\"Capital city\",\"Affordable\",\"3-year post-study\",\"Safe country\"]",86.0),
-    # Singapore
-    ("SGP","National University of Singapore","NUS","https://nus.edu.sg","Singapore",8,18.0,8.0,6.5,None,22000,1400,0,
-     '[{"name":"MSc CS","duration_years":2,"tuition_usd":22000},{"name":"MSc Data Science","duration_years":2,"tuition_usd":22000}]',
-     '["August","January"]',True,"NUS is Asia''s top university and world top 10.","[\"Top 10 globally\",\"Asia hub\",\"Google/Meta offices\",\"Strong research\"]",96.0),
-    ("SGP","Nanyang Technological University","NTU","https://ntu.edu.sg","Singapore",15,22.0,7.5,6.5,None,20000,1400,0,
-     '[{"name":"MSc CS","duration_years":2,"tuition_usd":20000},{"name":"MSc AI","duration_years":2,"tuition_usd":20000}]',
-     '["August","January"]',True,"NTU is one of the world''s top 15 universities, known for engineering and business.","[\"Top 15 globally\",\"Engineering excellence\",\"Asia hub\",\"Research funding\"]",95.0),
-    # Netherlands
-    ("NLD","Delft University of Technology","TU Delft","https://tudelft.nl","Delft",47,35.0,7.5,6.5,None,16000,1100,0,
-     '[{"name":"MSc CS","duration_years":2,"tuition_usd":16000},{"name":"MSc EE","duration_years":2,"tuition_usd":16000}]',
-     '["September","February"]',True,"TU Delft is Europe''s top engineering university.","[\"Top 50 globally\",\"Engineering excellence\",\"EU work permit\",\"Shell/ASML\"]",93.0),
-    ("NLD","University of Amsterdam","UvA","https://uva.nl","Amsterdam",55,55.0,7.0,6.5,None,14000,1300,0,
-     '[{"name":"MSc CS","duration_years":2,"tuition_usd":14000},{"name":"MSc AI","duration_years":2,"tuition_usd":14000}]',
-     '["September","February"]',True,"UvA is a top research university in Europe''s most international city.","[\"Top 60 globally\",\"Amsterdam location\",\"EU work rights\",\"Vibrant city\"]",91.0),
-    # Sweden
-    ("SWE","KTH Royal Institute of Technology","KTH","https://kth.se","Stockholm",89,30.0,7.5,6.5,None,16000,1100,0,
-     '[{"name":"MSc CS","duration_years":2,"tuition_usd":16000},{"name":"MSc Machine Learning","duration_years":2,"tuition_usd":16000}]',
-     '["August"]',True,"KTH is Scandinavia''s largest technical university in Stockholm.","[\"Top 100 globally\",\"Stockholm tech\",\"Spotify/Ericsson\",\"Swedish Institute Scholarship\"]",92.0),
-    ("SWE","Chalmers University of Technology","Chalmers","https://chalmers.se","Gothenburg",171,35.0,7.0,6.5,None,15000,1000,0,
-     '[{"name":"MSc CS","duration_years":2,"tuition_usd":15000},{"name":"MSc Data Science","duration_years":2,"tuition_usd":15000}]',
-     '["September"]',True,"Chalmers is a leading technology university with strong automotive industry links.","[\"Volvo/Volvocars industry\",\"Swedish Scholarship\",\"Strong research\",\"Job-seeking visa\"]",90.0),
-    # France
-    ("FRA","Ecole Polytechnique","Polytechnique","https://polytechnique.edu","Paris",37,8.0,8.5,7.0,None,15000,1200,0,
-     '[{"name":"MSc Data Science","duration_years":2,"tuition_usd":15000},{"name":"MSc CS","duration_years":2,"tuition_usd":15000}]',
-     '["September"]',True,"Ecole Polytechnique is France''s most prestigious engineering school.","[\"Top 40 globally\",\"French engineering excellence\",\"EU work rights\"]",94.0),
-    ("FRA","HEC Paris","HEC","https://hec.edu","Paris",33,12.0,8.0,7.0,None,35000,1500,0,
-     '[{"name":"MBA","duration_years":2,"tuition_usd":75000},{"name":"MSc Management","duration_years":2,"tuition_usd":35000}]',
-     '["September","January"]',True,"HEC Paris is Europe''s top business school.","[\"#1 MBA Europe\",\"Finance focus\",\"EU work rights\",\"Paris location\"]",96.0),
-    # Japan
-    ("JPN","University of Tokyo","UTokyo","https://u-tokyo.ac.jp","Tokyo",28,35.0,8.0,6.5,None,8000,1000,0,
-     '[{"name":"MS CS","duration_years":2,"tuition_usd":8000},{"name":"MS Engineering","duration_years":2,"tuition_usd":8000}]',
-     '["April","October"]',True,"UTokyo is Japan''s top university ranked among Asia''s best.","[\"Top 30 globally\",\"MEXT scholarship\",\"Low tuition\",\"Research excellence\"]",93.0),
-    ("JPN","Kyoto University","Kyoto","https://kyoto-u.ac.jp","Kyoto",46,40.0,7.5,6.5,None,8000,900,0,
-     '[{"name":"MS CS","duration_years":2,"tuition_usd":8000},{"name":"MS Informatics","duration_years":2,"tuition_usd":8000}]',
-     '["April","October"]',True,"Kyoto University is Japan''s second-ranked university with 28 Nobel Prize winners.","[\"Top 50 globally\",\"28 Nobel laureates\",\"MEXT scholarship\",\"Historic city\"]",92.0),
-    # South Korea
-    ("KOR","KAIST","KAIST","https://kaist.ac.kr","Daejeon",65,24.0,7.5,6.5,None,5000,800,0,
-     '[{"name":"MS CS","duration_years":2,"tuition_usd":5000},{"name":"MS AI","duration_years":2,"tuition_usd":5000}]',
-     '["March","September"]',True,"KAIST is South Korea''s top science and technology institute.","[\"Top 70 globally\",\"GKFS scholarship\",\"Low tuition\",\"Samsung/LG connections\"]",93.0),
-    ("KOR","Seoul National University","SNU","https://snu.ac.kr","Seoul",41,28.0,7.5,6.5,None,6000,900,0,
-     '[{"name":"MS CS","duration_years":2,"tuition_usd":6000},{"name":"MS Data Science","duration_years":2,"tuition_usd":6000}]',
-     '["March","September"]',True,"SNU is South Korea''s most prestigious university.","[\"Top 45 globally\",\"Low tuition\",\"GKFS scholarship\",\"Seoul tech scene\"]",92.0),
-]
-
-# ── Insert all universities ──────────────────────────────────
 def insert_unis(unis, default_min_gre=None):
     inserted = 0
     for row in unis:
@@ -309,9 +260,6 @@ def insert_unis(unis, default_min_gre=None):
             print(f"  SKIP: country {code} not found")
             continue
         country_id = country[0]
-        # row: code, name, short, website, city, qs_rank, accept_rate, min_cgpa,
-        #      min_ielts, min_gre, tuition, living, app_fee, programs, intakes,
-        #      has_sch, overview, strengths, emp_rate
         min_gre = row[9] if row[9] is not None else default_min_gre
         try:
             cur.execute("""
@@ -336,10 +284,7 @@ def insert_unis(unis, default_min_gre=None):
 all_groups = [
     (UNIVERSITIES, None),
     (UK_UNIVERSITIES, None),
-    (CANADA_UNIVERSITIES, None),
-    (AUS_UNIVERSITIES, None),
-    (GER_UNIVERSITIES, None),
-    (OTHER_UNIVERSITIES, None),
+    (GLOBAL_UNIVERSITIES, None),
 ]
 
 total = 0
@@ -347,9 +292,8 @@ for group, default_gre in all_groups:
     n = insert_unis(group, default_gre)
     total += n
 
-print(f"\n✅ Done! {total} new universities inserted.")
+print(f"\n[OK] Done! {total} new universities inserted.")
 
-# Check total
 cur.execute("SELECT COUNT(*) FROM universities")
 print(f"   Total universities in DB: {cur.fetchone()[0]}")
 cur.execute("SELECT COUNT(*) FROM countries")

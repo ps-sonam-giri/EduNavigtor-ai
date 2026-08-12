@@ -5,6 +5,9 @@ import { universityApi } from '@/lib/api'
 import { Search, MapPin, TrendingUp, ArrowRight, Star, Award, DollarSign, CheckCircle2, ShieldCheck } from 'lucide-react'
 import { motion } from 'framer-motion'
 
+import { ALL_WORLD_COUNTRIES, TOP_POPULAR_COUNTRIES } from './ProfilePage'
+import { Globe, Sparkles, Loader2 } from 'lucide-react'
+
 const COUNTRY_TABS = [
   { label: '🌍 All Countries', value: 'All' },
   { label: '🇩🇪 Germany', value: 'Germany' },
@@ -13,6 +16,17 @@ const COUNTRY_TABS = [
   { label: '🇨🇦 Canada', value: 'Canada' },
   { label: '🇦🇺 Australia', value: 'Australia' },
   { label: '🇮🇪 Ireland', value: 'Ireland' },
+  { label: '🇫🇷 France', value: 'France' },
+  { label: '🇳🇱 Netherlands', value: 'Netherlands' },
+  { label: '🇸🇪 Sweden', value: 'Sweden' },
+  { label: '🇨🇭 Switzerland', value: 'Switzerland' },
+  { label: '🇸🇬 Singapore', value: 'Singapore' },
+  { label: '🇯🇵 Japan', value: 'Japan' },
+  { label: '🇰🇷 South Korea', value: 'South Korea' },
+  { label: '🇮🇹 Italy', value: 'Italy' },
+  { label: '🇪🇸 Spain', value: 'Spain' },
+  { label: '🇦🇪 UAE', value: 'United Arab Emirates' },
+  { label: '🇮🇳 India', value: 'India' },
 ]
 
 const DEFAULT_MEDIA: Record<string, { image: string; flag: string; offered: string[]; accepted: string[] }> = {
@@ -94,13 +108,16 @@ export default function UniversitiesPage() {
   const [search, setSearch] = useState('')
   const [selectedCountryTab, setSelectedCountryTab] = useState('All')
   const [maxTuition, setMaxTuition] = useState('')
+  const [isLiveSearch, setIsLiveSearch] = useState(false)
 
-  const { data: universities = [], isLoading } = useQuery({
-    queryKey: ['universities', selectedCountryTab, maxTuition],
+  const { data: universities = [], isLoading, isFetching } = useQuery({
+    queryKey: ['universities', selectedCountryTab, search, maxTuition, isLiveSearch],
     queryFn: () =>
       universityApi.list({
         country: selectedCountryTab !== 'All' ? selectedCountryTab : undefined,
+        search: search || undefined,
         max_tuition: maxTuition || undefined,
+        live: isLiveSearch,
         limit: 50,
       }).then((r: any) => r.data),
   })
@@ -123,26 +140,73 @@ export default function UniversitiesPage() {
   return (
     <div className="space-y-6">
       {/* Header */}
-      <div>
-        <h1 className="text-2xl font-bold text-gray-900">Universities & Campus Explorer</h1>
-        <p className="text-gray-500 text-sm">Browse top universities country-by-country, view campus photos, tuition fees, and offered/accepted scholarships</p>
+      <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-3">
+        <div>
+          <h1 className="text-2xl font-bold text-gray-900">Worldwide Universities & Campus Explorer</h1>
+          <p className="text-gray-500 text-sm">Explore top universities across all 195+ countries with live web search, tuition fees, and scholarship waivers</p>
+        </div>
+
+        <button
+          type="button"
+          onClick={() => setIsLiveSearch(!isLiveSearch)}
+          className={`px-4 py-2 rounded-xl text-xs font-bold transition-all flex items-center gap-2 shadow-xs shrink-0 self-start md:self-auto ${
+            isLiveSearch
+              ? 'bg-gradient-to-r from-purple-600 to-indigo-600 text-white shadow-md'
+              : 'bg-white text-gray-700 border border-gray-200 hover:border-purple-400 hover:bg-purple-50/50'
+          }`}
+        >
+          {isLiveSearch ? <Sparkles className="w-4 h-4 text-amber-300 animate-pulse" /> : <Globe className="w-4 h-4 text-brand-600" />}
+          {isLiveSearch ? '🌐 Live Web Search Mode Active' : 'Search Live Web Worldwide'}
+        </button>
       </div>
 
-      {/* Country Tabs */}
-      <div className="flex items-center gap-2 overflow-x-auto pb-2 scrollbar-none border-b border-gray-100">
-        {COUNTRY_TABS.map((tab) => (
-          <button
-            key={tab.value}
-            onClick={() => setSelectedCountryTab(tab.value)}
-            className={`px-3.5 py-2 rounded-xl text-sm font-medium whitespace-nowrap transition-all flex items-center gap-1.5 ${
-              selectedCountryTab === tab.value
-                ? 'bg-brand-500 text-white shadow-sm'
-                : 'bg-white text-gray-600 border border-gray-200 hover:border-brand-300 hover:bg-brand-50/50'
-            }`}
+      {/* Country Tabs & Dropdown */}
+      <div className="space-y-3">
+        <div className="flex items-center gap-2 overflow-x-auto pb-1 scrollbar-none border-b border-gray-100">
+          {COUNTRY_TABS.map((tab) => (
+            <button
+              key={tab.value}
+              onClick={() => setSelectedCountryTab(tab.value)}
+              className={`px-3.5 py-2 rounded-xl text-xs font-semibold whitespace-nowrap transition-all flex items-center gap-1.5 ${
+                selectedCountryTab === tab.value
+                  ? 'bg-brand-500 text-white shadow-xs'
+                  : 'bg-white text-gray-600 border border-gray-200 hover:border-brand-300 hover:bg-brand-50/50'
+              }`}
+            >
+              {tab.label}
+            </button>
+          ))}
+        </div>
+
+        {/* 195+ Countries Dropdown */}
+        <div className="flex items-center gap-2">
+          <label className="text-xs font-medium text-slate-500 whitespace-nowrap">Filter by 195+ World Countries:</label>
+          <select
+            value={selectedCountryTab}
+            onChange={(e) => setSelectedCountryTab(e.target.value)}
+            className="input text-xs py-1.5 font-medium cursor-pointer bg-white max-w-xs"
           >
-            {tab.label}
-          </button>
-        ))}
+            <option value="All">🌍 All Countries (Global)</option>
+            <optgroup label="🔥 Popular Study Abroad Destinations">
+              {TOP_POPULAR_COUNTRIES.map((c) => (
+                <option key={c.name} value={c.name}>
+                  {c.flag} {c.name}
+                </option>
+              ))}
+            </optgroup>
+            <optgroup label="🌐 All Sovereign Nations (195+ Available)">
+              {ALL_WORLD_COUNTRIES.map((c) => {
+                const topMatch = TOP_POPULAR_COUNTRIES.find((item) => item.name === c)
+                const flag = topMatch ? topMatch.flag : '🌐'
+                return (
+                  <option key={c} value={c}>
+                    {flag} {c}
+                  </option>
+                )
+              })}
+            </optgroup>
+          </select>
+        </div>
       </div>
 
       {/* Filter Inputs */}
@@ -153,7 +217,7 @@ export default function UniversitiesPage() {
             <input
               value={search}
               onChange={(e) => setSearch(e.target.value)}
-              placeholder="Search university name, city, or program..."
+              placeholder="Search any university worldwide (e.g. Sorbonne, ETH Zurich, NUS, Harvard, TUM, Tokyo...)"
               className="input pl-10 text-sm"
             />
           </div>

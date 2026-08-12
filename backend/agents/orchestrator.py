@@ -14,13 +14,24 @@ from langgraph.graph import END, StateGraph
 from agents.llm import ainvoke_llm, extract_json_from_response
 from agents.state import AgentState
 from agents.verifier import verifier_node
-from tools.registry import execute_tool, get_tool_schemas
+from pydantic import BaseModel, Field, ValidationError
+
+from tools.registry import get_tool_schemas, execute_tool
+
+
+class ReActDecisionModel(BaseModel):
+    thought: str = Field(default="Deciding next action.", description="Reasoning about the action")
+    action: str = Field(default="finish", description="Tool name to call, or 'finish'")
+    action_input: Dict[str, Any] = Field(default_factory=dict, description="Arguments for tool call")
+    final_answer: Optional[str] = Field(default=None, description="Final response text if finishing")
+
+
+from app.core.student_rag import retrieve_student_rag_context
 
 
 REACT_DECISION_PROMPT = """You are EduPilot AI, a state-of-the-art autonomous study abroad copilot.
 Your task is to help the student by deciding the BEST tool action to execute next, OR providing a beautifully formatted, executive-level final answer.
 
-Student Profile:
 {profile_summary}
 
 User Question: "{user_query}"
@@ -36,9 +47,17 @@ Accumulated Observations / History:
 RULES FOR DECISION-MAKING:
 1. If you need data (universities, scholarships, financial calculations, document parsing), choose a TOOL ACTION.
 2. If you have gathered all necessary observations to answer the query completely, choose "finish".
-3. Always base your final answer strictly on returned tool observations. Do not invent unverified facts.
-4. If PREVIOUS VERIFIER CRITIQUE is present in context, you MUST either call a tool to fix the flagged issue, or finish with a corrected final_answer that resolves every flagged violation.
-5. ANSWER FORMATTING REQUIREMENTS (CRITICAL FOR USER READABILITY):
+3. STUDENT DATA RAG GROUNDING: Your reasoning, university risk levels (Safe/Target/Reach), fee assessments, and action plan MUST strictly align with the RETRIEVED STUDENT RAG CONTEXT (exact CGPA, backlogs count, budget, test scores).
+4. Always base your final answer strictly on returned tool observations and retrieved student data. Do not invent unverified facts.
+5. If PREVIOUS VERIFIER CRITIQUE is present in context, you MUST either call a tool to fix the flagged issue, or finish with a corrected final_answer that resolves every flagged violation.
+6. SOURCE CITATIONS REQUIREMENT: Whenever using facts from web search observations, you MUST include inline claim-level citations formatted as `[Source: Domain](URL)`.
+7. STRICT PROFILE SCOPE & REDIRECTION GUIDANCE:
+   - Answer queries strictly grounded in the student's filled profile data (CGPA, degree, backlogs, budget, and selected target country).
+   - If the user asks for recommendations about a country DIFFERENT from their profile target country:
+     Choose "finish" and inform them that their active profile target country is set to their profile selection. Direct them to update their target destination in **[My Profile](/profile)** to receive tailored recommendations for the new country!
+   - If the user asks for multi-country side-by-side comparisons:
+     Direct them to our dedicated **[Compare Universities](/compare)** tab which handles visual side-by-side matrix comparisons!
+8. ANSWER FORMATTING REQUIREMENTS (CRITICAL FOR USER READABILITY):
    - Start with a clear Executive Summary block (e.g., 🎯 **Executive Brief**).
    - Use Markdown Tables with clean column headers for multi-item comparisons (universities, fees, scholarships).
    - Use section headers (### 🎓 Top Universities, ### 🏆 Scholarship Matches, ### 💰 Financial Breakdown, ### 📌 Action Plan).
@@ -75,6 +94,10 @@ async def agent_decide_node(state: AgentState) -> AgentState:
     critique = state.get("verifier_critique", "")
     turn_count = state.get("turn_count", 0)
 
+    # Student Data RAG Retrieval
+    rag_payload = retrieve_student_rag_context(profile, query)
+    profile_summary = rag_payload["formatted_context"]
+
     # Format observations summary
     obs_summary = "\n".join([
         f"Step {i+1} [{obs.get('tool', 'Tool')}]: {json.dumps(obs.get('observation', obs.get('error', '')), indent=2)[:500]}"
@@ -85,19 +108,27 @@ async def agent_decide_node(state: AgentState) -> AgentState:
 
     prompt = REACT_DECISION_PROMPT.format(
         user_query=query,
-        profile_summary=json.dumps(profile, indent=2),
+        profile_summary=profile_summary,
         tool_schemas=json.dumps(get_tool_schemas(), indent=2),
         observations_summary=obs_summary,
         critique_context=critique_context,
     )
 
     response_text, tokens = await ainvoke_llm(prompt, fast=(turn_count > 0))
-    decision = extract_json_from_response(response_text)
+    raw_decision = extract_json_from_response(response_text)
 
-    thought = decision.get("thought", "Deciding next step.")
-    action = decision.get("action", "finish")
-    action_input = decision.get("action_input", {})
-    final_answer = decision.get("final_answer", "")
+    # Pydantic Decision Model Validation
+    try:
+        validated_decision = ReActDecisionModel.model_validate(raw_decision)
+        thought = validated_decision.thought
+        action = validated_decision.action
+        action_input = validated_decision.action_input
+        final_answer = validated_decision.final_answer or ""
+    except Exception as e:
+        thought = raw_decision.get("thought", "Deciding next step.")
+        action = raw_decision.get("action", "finish")
+        action_input = raw_decision.get("action_input", {})
+        final_answer = raw_decision.get("final_answer", "")
 
     executed = list(state.get("agents_executed", []))
     executed.append(f"agent_turn_{turn_count+1}")

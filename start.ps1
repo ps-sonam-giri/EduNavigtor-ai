@@ -27,6 +27,13 @@ Start-Process powershell -ArgumentList "-NoExit", "-Command", `
 
 Start-Sleep -Seconds 2
 
+# ── Start Core Tools MCP Server ───────────────────────────────
+Write-Host "Starting Core Tools MCP Server..." -ForegroundColor Green
+Start-Process powershell -ArgumentList "-NoExit", "-Command", `
+    "cd '$BACKEND'; Write-Host 'Core Tools MCP Server starting on http://localhost:8003' -ForegroundColor Green; .\venv\Scripts\python.exe -m mcp_servers.core_tools_mcp_server"
+
+Start-Sleep -Seconds 2
+
 # ── Start Frontend ────────────────────────────────────────────
 Write-Host "Starting Frontend (React)..." -ForegroundColor Green
 Start-Process powershell -ArgumentList "-NoExit", "-Command", `
@@ -38,9 +45,10 @@ Write-Host ""
 Write-Host "========================================" -ForegroundColor Cyan
 Write-Host "   EduPilot AI is starting up!" -ForegroundColor Cyan
 Write-Host "----------------------------------------" -ForegroundColor Cyan
-Write-Host "   App:       http://localhost:3000" -ForegroundColor Yellow
-Write-Host "   API:       http://localhost:8000" -ForegroundColor Yellow
-Write-Host "   Gmail MCP: http://localhost:8001" -ForegroundColor Yellow
+Write-Host "   App:        http://localhost:3000" -ForegroundColor Yellow
+Write-Host "   API:        http://localhost:8000" -ForegroundColor Yellow
+Write-Host "   Gmail MCP:  http://localhost:8001" -ForegroundColor Yellow
+Write-Host "   Core MCP:   http://localhost:8003" -ForegroundColor Yellow
 Write-Host "========================================" -ForegroundColor Cyan
 Write-Host ""
 Write-Host "Opening browser in 5 seconds..." -ForegroundColor Gray

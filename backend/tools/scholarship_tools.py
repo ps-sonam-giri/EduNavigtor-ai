@@ -29,7 +29,8 @@ async def search_scholarships_tool(
     """
     from tools.tavily_tools import search_tavily_web
 
-    query = f"scholarships for {nationality} students in {country or 'USA UK Germany Canada Australia'} 2025 2026 eligibility application deadline"
+    target_country = country or "Germany"
+    query = f"scholarships for {nationality} students in {target_country} 2025 2026 eligibility application deadline"
     res = await search_tavily_web(query=query, max_results=min(limit, 10))
 
     if res.get("status") == "success":
@@ -37,7 +38,7 @@ async def search_scholarships_tool(
         for r in res.get("results", []):
             results.append({
                 "name": r.get("title", "Scholarship Result"),
-                "country": country or "International",
+                "country": target_country,
                 "content_snippet": r.get("content", "")[:300],
                 "url": r.get("url"),
                 "source": "Tavily Live Web Engine",

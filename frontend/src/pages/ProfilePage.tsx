@@ -3,10 +3,63 @@ import { useForm } from 'react-hook-form'
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
 import { profileApi } from '@/lib/api'
 import toast from 'react-hot-toast'
-import { Save, Upload, User, BookOpen, Globe, DollarSign, Briefcase, CheckCircle, Trash2, AlertTriangle, Loader2 } from 'lucide-react'
+import { Save, Upload, User, BookOpen, Globe, DollarSign, Briefcase, CheckCircle, Trash2, AlertTriangle, Loader2, X, Search, Plus } from 'lucide-react'
 import { motion } from 'framer-motion'
 
-const COUNTRIES = ['United States', 'United Kingdom', 'Canada', 'Australia', 'Germany', 'Ireland', 'New Zealand']
+export const TOP_POPULAR_COUNTRIES = [
+  { name: 'United States', flag: '🇺🇸' },
+  { name: 'United Kingdom', flag: '🇬🇧' },
+  { name: 'Canada', flag: '🇨🇦' },
+  { name: 'Australia', flag: '🇦🇺' },
+  { name: 'Germany', flag: '🇩🇪' },
+  { name: 'Ireland', flag: '🇮🇪' },
+  { name: 'New Zealand', flag: '🇳🇿' },
+  { name: 'France', flag: '🇫🇷' },
+  { name: 'Netherlands', flag: '🇳🇱' },
+  { name: 'Sweden', flag: '🇸🇪' },
+  { name: 'Switzerland', flag: '🇨🇭' },
+  { name: 'Singapore', flag: '🇸🇬' },
+  { name: 'Japan', flag: '🇯🇵' },
+  { name: 'South Korea', flag: '🇰🇷' },
+  { name: 'Italy', flag: '🇮🇹' },
+  { name: 'Spain', flag: '🇪🇸' },
+  { name: 'United Arab Emirates', flag: '🇦🇪' },
+  { name: 'Finland', flag: '🇫🇮' },
+  { name: 'Norway', flag: '🇳🇴' },
+  { name: 'Denmark', flag: '🇩🇰' },
+  { name: 'Austria', flag: '🇦🇹' },
+  { name: 'Belgium', flag: '🇧🇪' },
+  { name: 'Poland', flag: '🇵🇱' },
+  { name: 'Hungary', flag: '🇭🇺' },
+  { name: 'Czech Republic', flag: '🇨🇿' },
+  { name: 'Malaysia', flag: '🇲🇾' },
+  { name: 'China', flag: '🇨🇳' },
+  { name: 'Hong Kong', flag: '🇭🇰' },
+  { name: 'Taiwan', flag: '🇹🇼' },
+]
+
+export const ALL_WORLD_COUNTRIES = [
+  'Afghanistan', 'Albania', 'Algeria', 'Andorra', 'Angola', 'Antigua and Barbuda', 'Argentina', 'Armenia', 'Australia', 'Austria',
+  'Azerbaijan', 'Bahamas', 'Bahrain', 'Bangladesh', 'Barbados', 'Belarus', 'Belgium', 'Belize', 'Benin', 'Bhutan',
+  'Bolivia', 'Bosnia and Herzegovina', 'Botswana', 'Brazil', 'Brunei', 'Bulgaria', 'Burkina Faso', 'Burundi', 'Cambodia', 'Cameroon',
+  'Canada', 'Cape Verde', 'Central African Republic', 'Chad', 'Chile', 'China', 'Colombia', 'Comoros', 'Congo', 'Costa Rica',
+  'Croatia', 'Cuba', 'Cyprus', 'Czech Republic', 'Denmark', 'Djibouti', 'Dominica', 'Dominican Republic', 'Ecuador', 'Egypt',
+  'El Salvador', 'Equatorial Guinea', 'Eritrea', 'Estonia', 'Eswatini', 'Ethiopia', 'Fiji', 'Finland', 'France', 'Gabon',
+  'Gambia', 'Georgia', 'Germany', 'Ghana', 'Greece', 'Grenada', 'Guatemala', 'Guinea', 'Guinea-Bissau', 'Guyana',
+  'Haiti', 'Honduras', 'Hong Kong', 'Hungary', 'Iceland', 'India', 'Indonesia', 'Iran', 'Iraq', 'Ireland',
+  'Israel', 'Italy', 'Ivory Coast', 'Jamaica', 'Japan', 'Jordan', 'Kazakhstan', 'Kenya', 'Kiribati', 'Kuwait',
+  'Kyrgyzstan', 'Laos', 'Latvia', 'Lebanon', 'Lesotho', 'Liberia', 'Libya', 'Liechtenstein', 'Lithuania', 'Luxembourg',
+  'Madagascar', 'Malawi', 'Malaysia', 'Maldives', 'Mali', 'Malta', 'Marshall Islands', 'Mauritania', 'Mauritius', 'Mexico',
+  'Micronesia', 'Moldova', 'Monaco', 'Mongolia', 'Montenegro', 'Morocco', 'Mozambique', 'Myanmar', 'Namibia', 'Nauru',
+  'Nepal', 'Netherlands', 'New Zealand', 'Nicaragua', 'Niger', 'Nigeria', 'North Macedonia', 'Norway', 'Oman', 'Pakistan',
+  'Palau', 'Palestine', 'Panama', 'Papua New Guinea', 'Paraguay', 'Peru', 'Philippines', 'Poland', 'Portugal', 'Qatar',
+  'Romania', 'Russia', 'Rwanda', 'Saint Kitts and Nevis', 'Saint Lucia', 'Saint Vincent and the Grenadines', 'Samoa', 'San Marino', 'Sao Tome and Principe', 'Saudi Arabia',
+  'Senegal', 'Serbia', 'Seychelles', 'Sierra Leone', 'Singapore', 'Slovakia', 'Slovenia', 'Solomon Islands', 'Somalia', 'South Africa',
+  'South Korea', 'South Sudan', 'Spain', 'Sri Lanka', 'Sudan', 'Suriname', 'Sweden', 'Switzerland', 'Syria', 'Taiwan',
+  'Tajikistan', 'Tanzania', 'Thailand', 'Timor-Leste', 'Togo', 'Tonga', 'Trinidad and Tobago', 'Tunisia', 'Turkey', 'Turkmenistan',
+  'Tuvalu', 'Uganda', 'Ukraine', 'United Arab Emirates', 'United Kingdom', 'United States', 'Uruguay', 'Uzbekistan', 'Vanuatu', 'Vatican City',
+  'Venezuela', 'Vietnam', 'Yemen', 'Zambia', 'Zimbabwe'
+]
 
 const NUMBER_FIELDS = [
   'cgpa', 'cgpa_scale', 'backlogs', 'graduation_year',
@@ -276,21 +329,87 @@ export default function ProfilePage() {
             <h2 className="font-semibold text-gray-900">Study Preferences</h2>
           </div>
           <div className="space-y-4">
-            <div>
-              <label className="label">Preferred Countries</label>
-              <div className="flex flex-wrap gap-2 mt-1">
-                {COUNTRIES.map(c => (
-                  <button
-                    key={c} type="button" onClick={() => toggleCountry(c)}
-                    className={`px-3 py-1.5 rounded-lg text-sm font-medium border transition-all ${
-                      selectedCountries.includes(c)
-                        ? 'bg-brand-500 text-white border-brand-500'
-                        : 'bg-white text-gray-600 border-gray-200 hover:border-brand-500'
-                    }`}
+            <div className="space-y-3">
+              <div className="flex items-center justify-between">
+                <label className="label mb-0">Preferred Countries ({selectedCountries.length} selected)</label>
+                <span className="text-xs text-slate-400">Select multiple destinations for tailored evaluation</span>
+              </div>
+
+              {/* Active Selected Countries Badges */}
+              {selectedCountries.length > 0 && (
+                <div className="flex flex-wrap gap-2 p-3 bg-brand-50/40 rounded-xl border border-brand-100">
+                  {selectedCountries.map(c => {
+                    const topMatch = TOP_POPULAR_COUNTRIES.find(item => item.name === c)
+                    const flag = topMatch ? topMatch.flag : '🌐'
+                    return (
+                      <span
+                        key={c}
+                        className="inline-flex items-center gap-1.5 px-3 py-1 rounded-lg text-xs font-semibold bg-brand-500 text-white shadow-xs"
+                      >
+                        <span>{flag} {c}</span>
+                        <button
+                          type="button"
+                          onClick={() => toggleCountry(c)}
+                          className="hover:bg-brand-600 rounded-full p-0.5 transition-colors"
+                        >
+                          <X className="w-3.5 h-3.5" />
+                        </button>
+                      </span>
+                    )
+                  })}
+                </div>
+              )}
+
+              {/* Add Country Dropdown (All 195+ World Countries) */}
+              <div className="flex items-center gap-2">
+                <div className="relative flex-1">
+                  <select
+                    value=""
+                    onChange={(e) => {
+                      if (e.target.value && !selectedCountries.includes(e.target.value)) {
+                        toggleCountry(e.target.value)
+                      }
+                    }}
+                    className="input pr-8 cursor-pointer font-medium text-slate-700 bg-white"
                   >
-                    {c}
-                  </button>
-                ))}
+                    <option value="">➕ Search & Add Any World Country (195+ Available)...</option>
+                    {ALL_WORLD_COUNTRIES.map(c => {
+                      const topMatch = TOP_POPULAR_COUNTRIES.find(item => item.name === c)
+                      const flag = topMatch ? topMatch.flag : '🌐'
+                      const isSelected = selectedCountries.includes(c)
+                      return (
+                        <option key={c} value={c} disabled={isSelected}>
+                          {flag} {c} {isSelected ? '(Already Selected)' : ''}
+                        </option>
+                      )
+                    })}
+                  </select>
+                </div>
+              </div>
+
+              {/* Quick Select Top Destinations */}
+              <div>
+                <p className="text-xs font-medium text-slate-500 mb-2">🔥 Popular Study Destinations Quick-Select:</p>
+                <div className="flex flex-wrap gap-1.5 max-h-40 overflow-y-auto pr-1">
+                  {TOP_POPULAR_COUNTRIES.map(c => {
+                    const isSelected = selectedCountries.includes(c.name)
+                    return (
+                      <button
+                        key={c.name}
+                        type="button"
+                        onClick={() => toggleCountry(c.name)}
+                        className={`px-2.5 py-1 rounded-lg text-xs font-medium border transition-all flex items-center gap-1.5 ${
+                          isSelected
+                            ? 'bg-brand-500 text-white border-brand-500 font-semibold shadow-2xs'
+                            : 'bg-white text-slate-700 border-slate-200 hover:border-brand-400 hover:bg-brand-50/50'
+                        }`}
+                      >
+                        <span>{c.flag}</span>
+                        <span>{c.name}</span>
+                      </button>
+                    )
+                  })}
+                </div>
               </div>
             </div>
             <div className="grid md:grid-cols-2 gap-4">
